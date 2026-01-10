@@ -39,6 +39,7 @@ FROM base AS runner
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
@@ -52,4 +53,4 @@ COPY --from=builder /app/package.json ./package.json
 USER nextjs
 EXPOSE 3000
 
-CMD ["pnpm","start","--","-H","0.0.0.0","-p","3000"]
+CMD ["pnpm", "start"]
