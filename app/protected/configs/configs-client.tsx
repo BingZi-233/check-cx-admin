@@ -132,8 +132,8 @@ function StatusBadges({ row }: { row: CheckConfigRow }) {
   const maintenance = !!row.is_maintenance
   return (
     <div className="flex items-center gap-2">
-      {enabled ? <Badge variant="success">Enabled</Badge> : <Badge variant="muted">Disabled</Badge>}
-      {maintenance ? <Badge variant="info">Maintenance</Badge> : null}
+      {enabled ? <Badge variant="success">已启用</Badge> : <Badge variant="muted">已禁用</Badge>}
+      {maintenance ? <Badge variant="info">维护中</Badge> : null}
     </div>
   )
 }
@@ -252,7 +252,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 id="q"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="name / type / model / endpoint / group"
+                placeholder="名称 / 类型 / 模型 / 接口地址 / 分组"
               />
             </div>
             <div className="w-full space-y-1 sm:w-64">
@@ -283,7 +283,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[220px]">名称</TableHead>
-                  <TableHead className="w-[140px]">Provider</TableHead>
+                  <TableHead className="w-[140px]">提供方</TableHead>
                   <TableHead>模型</TableHead>
                   <TableHead>分组</TableHead>
                   <TableHead className="w-[220px]">状态</TableHead>
@@ -337,7 +337,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                             size="icon-sm"
                             onClick={() => openCopy(row)}
                             disabled={pending}
-                            aria-label="Copy"
+                            aria-label="复制"
                           >
                             <Copy className="size-4" />
                           </Button>
@@ -346,7 +346,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                             size="icon-sm"
                             onClick={() => openEdit(row)}
                             disabled={pending}
-                            aria-label="Edit"
+                            aria-label="编辑"
                           >
                             <Pencil className="size-4" />
                           </Button>
@@ -355,7 +355,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                             size="icon-sm"
                             onClick={() => openDelete(row)}
                             disabled={pending}
-                            aria-label="Delete"
+                            aria-label="删除"
                           >
                             <Trash2 className="size-4" />
                           </Button>
@@ -407,7 +407,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
         <DialogContent>
           <DialogHeader>
             <DialogTitle>新增配置</DialogTitle>
-            <DialogDescription>api_key 使用密码框输入；JSON 字段留空表示 NULL。</DialogDescription>
+            <DialogDescription>API 密钥使用密码框输入；JSON 字段留空表示空值。</DialogDescription>
           </DialogHeader>
           <Form
             onSubmit={(e) => {
@@ -448,7 +448,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 </NativeSelect>
               </div>
               <div className="space-y-1">
-                <Label>Provider 类型</Label>
+                <Label>提供方类型</Label>
                 <NativeSelect value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                   {creatableProviderTypes.map((t) => (
                     <option key={t} value={t}>
@@ -462,15 +462,15 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 <Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>Endpoint</Label>
+                <Label>接口地址</Label>
                 <Input
                   value={form.endpoint}
                   onChange={(e) => setForm({ ...form, endpoint: e.target.value })}
-                  placeholder="https://.../v1/..."
+                  placeholder="例如：https://.../v1/..."
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>API Key</Label>
+                <Label>API 密钥</Label>
                 <Input
                   type="password"
                   value={form.apiKey}
@@ -478,7 +478,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>request_header (JSON)</Label>
+                <Label>请求头（JSON）</Label>
                 <Textarea
                   value={form.requestHeaderJson}
                   onChange={(e) => setForm({ ...form, requestHeaderJson: e.target.value })}
@@ -486,7 +486,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>metadata (JSON)</Label>
+                <Label>元数据（JSON）</Label>
                 <Textarea
                   value={form.metadataJson}
                   onChange={(e) => setForm({ ...form, metadataJson: e.target.value })}
@@ -527,7 +527,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
           <DialogHeader>
             <DialogTitle>编辑配置</DialogTitle>
             <DialogDescription>
-              api_key 不会回显；如需修改请勾选“更新 API Key”并输入新值。
+              API 密钥不会回显；如需修改请勾选“更新 API 密钥”并输入新值。
             </DialogDescription>
           </DialogHeader>
           <Form
@@ -572,7 +572,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 </NativeSelect>
               </div>
               <div className="space-y-1">
-                <Label>Provider 类型</Label>
+                <Label>提供方类型</Label>
                 <NativeSelect value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                   {(providerTypes as readonly string[]).includes(form.type) ? null : (
                     <option key={form.type} value={form.type}>
@@ -591,7 +591,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 <Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>Endpoint</Label>
+                <Label>接口地址</Label>
                 <Input
                   value={form.endpoint}
                   onChange={(e) => setForm({ ...form, endpoint: e.target.value })}
@@ -599,25 +599,25 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label>API Key</Label>
+                  <Label>API 密钥</Label>
                   <label className="flex items-center gap-2 text-sm">
                     <Switch
                       checked={form.updateApiKey}
                       onCheckedChange={(v) => setForm({ ...form, updateApiKey: v })}
                     />
-                    更新 API Key
+                    更新 API 密钥
                   </label>
                 </div>
                 <Input
                   type="password"
                   value={form.apiKey}
                   onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                  placeholder={form.updateApiKey ? '输入新的 api_key' : '••••••••（未更新）'}
+                  placeholder={form.updateApiKey ? '请输入新的 API 密钥' : '••••••••（未更新）'}
                   disabled={!form.updateApiKey}
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>request_header (JSON)</Label>
+                <Label>请求头（JSON）</Label>
                 <Textarea
                   value={form.requestHeaderJson}
                   onChange={(e) => setForm({ ...form, requestHeaderJson: e.target.value })}
@@ -625,7 +625,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>metadata (JSON)</Label>
+                <Label>元数据（JSON）</Label>
                 <Textarea
                   value={form.metadataJson}
                   onChange={(e) => setForm({ ...form, metadataJson: e.target.value })}
@@ -666,7 +666,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
           <DialogHeader>
             <DialogTitle>复制配置</DialogTitle>
             <DialogDescription>
-              点击“保存”后才会创建新配置；默认沿用源配置的 api_key（不会回显），如需修改请勾选“更新 API Key”。
+              点击“保存”后才会创建新配置；默认沿用源配置的 API 密钥（不会回显），如需修改请勾选“更新 API 密钥”。
             </DialogDescription>
           </DialogHeader>
           <Form
@@ -711,7 +711,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 </NativeSelect>
               </div>
               <div className="space-y-1">
-                <Label>Provider 类型</Label>
+                <Label>提供方类型</Label>
                 <NativeSelect value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                   {providerTypes.map((t) => (
                     <option key={t} value={t}>
@@ -725,30 +725,30 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 <Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>Endpoint</Label>
+                <Label>接口地址</Label>
                 <Input value={form.endpoint} onChange={(e) => setForm({ ...form, endpoint: e.target.value })} />
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label>API Key</Label>
+                  <Label>API 密钥</Label>
                   <label className="flex items-center gap-2 text-sm">
                     <Switch
                       checked={form.updateApiKey}
                       onCheckedChange={(v) => setForm({ ...form, updateApiKey: v })}
                     />
-                    更新 API Key
+                    更新 API 密钥
                   </label>
                 </div>
                 <Input
                   type="password"
                   value={form.apiKey}
                   onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                  placeholder={form.updateApiKey ? '输入新的 api_key' : '••••••••（沿用源配置）'}
+                  placeholder={form.updateApiKey ? '请输入新的 API 密钥' : '••••••••（沿用源配置）'}
                   disabled={!form.updateApiKey}
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>request_header (JSON)</Label>
+                <Label>请求头（JSON）</Label>
                 <Textarea
                   value={form.requestHeaderJson}
                   onChange={(e) => setForm({ ...form, requestHeaderJson: e.target.value })}
@@ -756,7 +756,7 @@ export function ConfigsClient({ initialRows, groups, q, group, page, perPage, to
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label>metadata (JSON)</Label>
+                <Label>元数据（JSON）</Label>
                 <Textarea
                   value={form.metadataJson}
                   onChange={(e) => setForm({ ...form, metadataJson: e.target.value })}

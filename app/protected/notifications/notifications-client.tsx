@@ -42,6 +42,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+import { formatLocalDateTimeZh, normalizeUiErrorMessage } from '@/lib/locale'
+
 import type { NotificationLevel, SystemNotification } from './page'
 
 const levelToBadgeVariant: Record<NotificationLevel, 'info' | 'warning' | 'error'> = {
@@ -50,11 +52,10 @@ const levelToBadgeVariant: Record<NotificationLevel, 'info' | 'warning' | 'error
   error: 'error',
 }
 
-function formatLocalDateTime(iso: string | null) {
-  if (!iso) return '—'
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString()
+const levelToLabel: Record<NotificationLevel, string> = {
+  info: '信息',
+  warning: '警告',
+  error: '错误',
 }
 
 function toDatetimeLocalValue(iso: string | null) {
@@ -110,7 +111,9 @@ export function NotificationsClient({
   initialError: string | null
 }) {
   const [notifications, setNotifications] = useState<SystemNotification[]>(initialNotifications)
-  const [pageError, setPageError] = useState<string | null>(initialError)
+  const [pageError, setPageError] = useState<string | null>(() =>
+    initialError ? normalizeUiErrorMessage(initialError, '加载失败') : null
+  )
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -189,7 +192,7 @@ export function NotificationsClient({
       setNotifications((prev) => [data as SystemNotification, ...prev])
       setCreateOpen(false)
     } catch (e: unknown) {
-      setDialogError(e instanceof Error ? e.message : '创建失败')
+      setDialogError(normalizeUiErrorMessage(e, '创建失败'))
     } finally {
       setBusy(false)
     }
@@ -230,7 +233,7 @@ export function NotificationsClient({
       )
       closeAllDialogs()
     } catch (e: unknown) {
-      setDialogError(e instanceof Error ? e.message : '更新失败')
+      setDialogError(normalizeUiErrorMessage(e, '更新失败'))
     } finally {
       setBusy(false)
     }
@@ -253,7 +256,7 @@ export function NotificationsClient({
       setNotifications((prev) => prev.filter((n) => n.id !== deleting.id))
       closeAllDialogs()
     } catch (e: unknown) {
-      setDialogError(e instanceof Error ? e.message : '删除失败')
+      setDialogError(normalizeUiErrorMessage(e, '删除失败'))
     } finally {
       setBusy(false)
     }
@@ -279,7 +282,7 @@ export function NotificationsClient({
         prev.map((row) => (row.id === n.id ? (data as SystemNotification) : row))
       )
     } catch (e: unknown) {
-      setPageError(e instanceof Error ? e.message : '操作失败')
+      setPageError(normalizeUiErrorMessage(e, '操作失败'))
     } finally {
       setBusy(false)
     }
@@ -325,7 +328,7 @@ export function NotificationsClient({
               notifications.map((n) => (
                 <TableRow key={n.id}>
                   <TableCell>
-                    <Badge variant={levelToBadgeVariant[n.level]}>{n.level}</Badge>
+                    <Badge variant={levelToBadgeVariant[n.level]}>{levelToLabel[n.level]}</Badge>
                   </TableCell>
                   <TableCell className="max-w-[520px]">
                     <div className="truncate">{n.message}</div>
@@ -340,9 +343,9 @@ export function NotificationsClient({
                       {n.is_active ? '已激活' : '未激活'}
                     </Button>
                   </TableCell>
-                  <TableCell>{formatLocalDateTime(n.start_time)}</TableCell>
-                  <TableCell>{formatLocalDateTime(n.end_time)}</TableCell>
-                  <TableCell>{formatLocalDateTime(n.created_at)}</TableCell>
+                  <TableCell>{formatLocalDateTimeZh(n.start_time)}</TableCell>
+                  <TableCell>{formatLocalDateTimeZh(n.end_time)}</TableCell>
+                  <TableCell>{formatLocalDateTimeZh(n.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button
@@ -499,9 +502,9 @@ function EditorForm({
               <SelectValue placeholder="请选择级别" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="info">info</SelectItem>
-              <SelectItem value="warning">warning</SelectItem>
-              <SelectItem value="error">error</SelectItem>
+              <SelectItem value="info">信息</SelectItem>
+              <SelectItem value="warning">警告</SelectItem>
+              <SelectItem value="error">错误</SelectItem>
             </SelectContent>
           </Select>
         </FormItem>

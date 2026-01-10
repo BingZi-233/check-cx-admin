@@ -123,3 +123,38 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes global-loading-bar-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(450%);
+  }
+}
+
+.global-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.global-loading-bar[data-visible="true"] {
+  opacity: 1;
+}
+
+.global-loading-bar__inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 20%;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  animation: global-loading-bar-indeterminate 1100ms ease-in-out infinite;
+}

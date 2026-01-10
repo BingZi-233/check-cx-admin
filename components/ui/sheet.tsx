@@ -84,7 +84,7 @@ function SheetContent({
           className="ring-offset-background focus:ring-ring absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:pointer-events-none"
         >
           <X className="size-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">关闭</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>
     </SheetPortal>

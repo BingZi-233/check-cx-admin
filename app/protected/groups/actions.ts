@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
+import { normalizeUiErrorMessage } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 
 type GroupActionState = {
@@ -35,9 +36,10 @@ function parseWebsiteUrl(value: unknown) {
 
 function normalizeSupabaseErrorMessage(message?: string) {
   if (!message) return "请求失败"
-  if (message.toLowerCase().includes("duplicate")) return "分组名称已存在"
-  if (message.toLowerCase().includes("unique")) return "分组名称已存在"
-  return message
+  const lower = message.toLowerCase()
+  if (lower.includes("duplicate")) return "分组名称已存在"
+  if (lower.includes("unique")) return "分组名称已存在"
+  return normalizeUiErrorMessage(message, "请求失败")
 }
 
 async function requireAuth() {
@@ -127,4 +129,3 @@ export async function deleteGroupAction(
 }
 
 export { initialState, type GroupActionState }
-

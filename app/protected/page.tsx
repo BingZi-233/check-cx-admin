@@ -6,6 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { Bell, Cog, Folder, Plus, Wrench } from 'lucide-react'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { formatNumberZh } from '@/lib/locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,7 +59,7 @@ async function safeCount(
 }
 
 function formatCount(value: CountOrNull) {
-  return value === null ? '—' : value.toLocaleString()
+  return formatNumberZh(value)
 }
 
 export default async function ProtectedPage() {

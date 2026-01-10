@@ -30,6 +30,7 @@ import {
   updateGroupAction,
   type GroupActionState,
 } from "@/app/protected/groups/actions"
+import { normalizeUiErrorMessage } from "@/lib/locale"
 
 type GroupInfoRow = {
   id: string
@@ -101,15 +102,15 @@ function GroupFormDialog({
           <FormField name="website_url" error={state.fieldErrors?.website_url}>
             <FormItem>
               <FormLabel>官网URL</FormLabel>
-              <FormControl>
-                <Input
-                  name="website_url"
-                  placeholder="https://example.com"
-                  defaultValue={defaultValues?.website_url ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+                  <FormControl>
+                    <Input
+                      name="website_url"
+                      placeholder="例如：https://example.com"
+                      defaultValue={defaultValues?.website_url ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
           </FormField>
 
           <ActionMessage state={state} />
@@ -176,13 +177,15 @@ export function GroupsClient({
   configCountsByGroupId: Record<string, number | null>
   loadError: string | null
 }) {
+  const safeLoadError = loadError ? normalizeUiErrorMessage(loadError, "加载失败") : null
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">分组管理</h1>
           <p className="text-muted-foreground text-sm">
-            管理 Dashboard 上的分组展示（新增、编辑、删除）。
+            管理仪表盘上的分组展示（新增、编辑、删除）。
           </p>
         </div>
 
@@ -199,11 +202,11 @@ export function GroupsClient({
         />
       </div>
 
-      {loadError ? (
+      {safeLoadError ? (
         <Card className="border-destructive/40">
           <CardHeader>
             <CardTitle>加载失败</CardTitle>
-            <CardDescription>{loadError}</CardDescription>
+            <CardDescription>{safeLoadError}</CardDescription>
           </CardHeader>
         </Card>
       ) : null}
@@ -266,7 +269,7 @@ export function GroupsClient({
         <Card>
           <CardHeader>
             <CardTitle>还没有分组</CardTitle>
-            <CardDescription>先创建一个分组，用于 Dashboard 展示。</CardDescription>
+            <CardDescription>先创建一个分组，用于仪表盘展示。</CardDescription>
           </CardHeader>
         </Card>
       )}

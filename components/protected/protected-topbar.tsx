@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ProtectedNav } from "@/components/protected/protected-nav"
 import { UserMenu } from "@/components/protected/user-menu"
+import { ThemeToggle } from "@/components/theme/theme-toggle"
 
 export function ProtectedTopbar({
   email,
@@ -49,6 +50,7 @@ export function ProtectedTopbar({
       </Link>
 
       <div className="ml-auto flex items-center gap-1">
+        <ThemeToggle />
         <UserMenu email={email} avatarUrl={avatarUrl} />
         <LogoutButton variant="ghost" size="icon" aria-label="登出">
           <LogOut className="size-4" />

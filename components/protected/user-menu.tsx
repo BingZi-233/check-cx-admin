@@ -27,7 +27,7 @@ export function UserMenu({
 
   const fallback = useMemo(() => {
     const first = email?.trim()?.[0]
-    return first ? first.toUpperCase() : "U"
+    return first ? first.toUpperCase() : "用"
   }, [email])
 
   const logout = async () => {
@@ -42,7 +42,7 @@ export function UserMenu({
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="gap-2 px-2">
           <Avatar className="size-8">
-            <AvatarImage src={avatarUrl ?? undefined} alt={email || "User"} />
+            <AvatarImage src={avatarUrl ?? undefined} alt={email || "用户"} />
             <AvatarFallback>{fallback}</AvatarFallback>
           </Avatar>
           <span className="hidden max-w-48 truncate text-sm md:inline">
@@ -71,4 +71,3 @@ export function UserMenu({
     </DropdownMenu>
   )
 }
-

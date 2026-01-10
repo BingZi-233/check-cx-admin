@@ -136,7 +136,7 @@ function DialogContent({
           type="button"
           onClick={() => setOpen(false)}
           className="text-muted-foreground hover:text-foreground absolute right-4 top-4 inline-flex size-8 items-center justify-center rounded-md transition-colors"
-          aria-label="Close"
+          aria-label="关闭"
         >
           <X className="size-4" />
         </button>

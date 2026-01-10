@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import type { ProviderType } from '@/lib/check-configs/types'
 import { creatableProviderTypes, providerTypes } from '@/lib/check-configs/types'
+import { normalizeUiErrorMessage } from '@/lib/locale'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -12,7 +13,7 @@ type ActionResult = { ok: true } | { ok: false; error: string }
 async function requireSignedInUser() {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.getClaims()
-  if (error || !data?.claims) throw new Error('Unauthorized')
+  if (error || !data?.claims) throw new Error('未登录或无权限')
   return data.claims
 }
 
@@ -51,7 +52,7 @@ function parseJsonStringRecord(
   if (!result.value) return { value: null }
 
   for (const [key, value] of Object.entries(result.value)) {
-    if (typeof key !== 'string') return { value: null, error: `${fieldName} key 必须是字符串` }
+    if (typeof key !== 'string') return { value: null, error: `${fieldName} 键必须是字符串` }
     if (typeof value !== 'string') return { value: null, error: `${fieldName}.${key} 必须是字符串` }
   }
 
@@ -71,11 +72,11 @@ function validateEndpoint(endpoint: string) {
   try {
     url = new URL(endpoint)
   } catch {
-    return 'endpoint 必须是完整 URL'
+    return '接口地址必须是完整 URL'
   }
-  if (!url.protocol.startsWith('http')) return 'endpoint 必须是 http/https'
+  if (!url.protocol.startsWith('http')) return '接口地址必须是 http/https'
   if (!url.pathname || url.pathname === '/') {
-    return 'endpoint 必须包含完整路径（不能只有域名）'
+    return '接口地址必须包含完整路径（不能只有域名）'
   }
   return null
 }
@@ -95,29 +96,29 @@ export async function createCheckConfigAction(payload: {
   await requireSignedInUser()
 
   const name = asNullIfEmpty(payload.name)
-  if (!name) return { ok: false, error: 'name 不能为空' }
+  if (!name) return { ok: false, error: '名称不能为空' }
 
   const type = asNullIfEmpty(payload.type)
-  if (!type) return { ok: false, error: 'type 不能为空' }
+  if (!type) return { ok: false, error: '提供方类型不能为空' }
   if (!isCreatableProviderType(type)) {
-    return { ok: false, error: `type 不支持：${type}` }
+    return { ok: false, error: `提供方类型不支持：${type}` }
   }
 
   const model = asNullIfEmpty(payload.model)
-  if (!model) return { ok: false, error: 'model 不能为空' }
+  if (!model) return { ok: false, error: '模型不能为空' }
 
   const endpoint = asNullIfEmpty(payload.endpoint)
-  if (!endpoint) return { ok: false, error: 'endpoint 不能为空' }
+  if (!endpoint) return { ok: false, error: '接口地址不能为空' }
   const endpointError = validateEndpoint(endpoint)
   if (endpointError) return { ok: false, error: endpointError }
 
   const apiKey = asNullIfEmpty(payload.apiKey)
-  if (!apiKey) return { ok: false, error: 'api_key 不能为空' }
+  if (!apiKey) return { ok: false, error: 'API 密钥不能为空' }
 
-  const requestHeader = parseJsonStringRecord(payload.requestHeaderJson, 'request_header')
+  const requestHeader = parseJsonStringRecord(payload.requestHeaderJson, '请求头')
   if (requestHeader.error) return { ok: false, error: requestHeader.error }
 
-  const metadata = parseJsonObject(payload.metadataJson, 'metadata')
+  const metadata = parseJsonObject(payload.metadataJson, '元数据')
   if (metadata.error) return { ok: false, error: metadata.error }
 
   const groupName = asNullIfEmpty(payload.groupName)
@@ -136,7 +137,7 @@ export async function createCheckConfigAction(payload: {
     group_name: groupName,
   })
 
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: normalizeUiErrorMessage(error.message, '保存失败') }
 
   revalidatePath('/protected/configs')
   return { ok: true }
@@ -159,34 +160,34 @@ export async function updateCheckConfigAction(payload: {
   await requireSignedInUser()
 
   const id = asNullIfEmpty(payload.id)
-  if (!id) return { ok: false, error: '缺少 id' }
+  if (!id) return { ok: false, error: '缺少配置 ID' }
 
   const name = asNullIfEmpty(payload.name)
-  if (!name) return { ok: false, error: 'name 不能为空' }
+  if (!name) return { ok: false, error: '名称不能为空' }
 
   const type = asNullIfEmpty(payload.type)
-  if (!type) return { ok: false, error: 'type 不能为空' }
+  if (!type) return { ok: false, error: '提供方类型不能为空' }
   if (!isProviderType(type)) {
     // 不破坏历史数据：允许“原样保存”未知 type，但禁止把它改成新的未知值。
     const admin = createAdminClient()
     const { data, error } = await admin.from('check_configs').select('type').eq('id', id).maybeSingle()
-    if (error) return { ok: false, error: error.message }
+    if (error) return { ok: false, error: normalizeUiErrorMessage(error.message, '保存失败') }
     if (!data) return { ok: false, error: '配置不存在' }
-    if (data.type !== type) return { ok: false, error: `type 不支持：${type}` }
+    if (data.type !== type) return { ok: false, error: `提供方类型不支持：${type}` }
   }
 
   const model = asNullIfEmpty(payload.model)
-  if (!model) return { ok: false, error: 'model 不能为空' }
+  if (!model) return { ok: false, error: '模型不能为空' }
 
   const endpoint = asNullIfEmpty(payload.endpoint)
-  if (!endpoint) return { ok: false, error: 'endpoint 不能为空' }
+  if (!endpoint) return { ok: false, error: '接口地址不能为空' }
   const endpointError = validateEndpoint(endpoint)
   if (endpointError) return { ok: false, error: endpointError }
 
-  const requestHeader = parseJsonStringRecord(payload.requestHeaderJson, 'request_header')
+  const requestHeader = parseJsonStringRecord(payload.requestHeaderJson, '请求头')
   if (requestHeader.error) return { ok: false, error: requestHeader.error }
 
-  const metadata = parseJsonObject(payload.metadataJson, 'metadata')
+  const metadata = parseJsonObject(payload.metadataJson, '元数据')
   if (metadata.error) return { ok: false, error: metadata.error }
 
   const groupName = asNullIfEmpty(payload.groupName)
@@ -205,13 +206,13 @@ export async function updateCheckConfigAction(payload: {
 
   if (payload.updateApiKey) {
     const apiKey = asNullIfEmpty(payload.apiKey)
-    if (!apiKey) return { ok: false, error: '选择更新 api_key 时，api_key 不能为空' }
+    if (!apiKey) return { ok: false, error: '勾选“更新 API 密钥”时，API 密钥不能为空' }
     patch.api_key = apiKey
   }
 
   const admin = createAdminClient()
   const { error } = await admin.from('check_configs').update(patch).eq('id', id)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: normalizeUiErrorMessage(error.message, '保存失败') }
 
   revalidatePath('/protected/configs')
   return { ok: true }
@@ -234,29 +235,29 @@ export async function copyCheckConfigAction(payload: {
   await requireSignedInUser()
 
   const sourceId = asNullIfEmpty(payload.sourceId)
-  if (!sourceId) return { ok: false, error: '缺少 sourceId' }
+  if (!sourceId) return { ok: false, error: '缺少源配置 ID' }
 
   const name = asNullIfEmpty(payload.name)
-  if (!name) return { ok: false, error: 'name 不能为空' }
+  if (!name) return { ok: false, error: '名称不能为空' }
 
   const type = asNullIfEmpty(payload.type)
-  if (!type) return { ok: false, error: 'type 不能为空' }
+  if (!type) return { ok: false, error: '提供方类型不能为空' }
   if (!isProviderType(type)) {
-    return { ok: false, error: `type 不支持：${type}` }
+    return { ok: false, error: `提供方类型不支持：${type}` }
   }
 
   const model = asNullIfEmpty(payload.model)
-  if (!model) return { ok: false, error: 'model 不能为空' }
+  if (!model) return { ok: false, error: '模型不能为空' }
 
   const endpoint = asNullIfEmpty(payload.endpoint)
-  if (!endpoint) return { ok: false, error: 'endpoint 不能为空' }
+  if (!endpoint) return { ok: false, error: '接口地址不能为空' }
   const endpointError = validateEndpoint(endpoint)
   if (endpointError) return { ok: false, error: endpointError }
 
-  const requestHeader = parseJsonStringRecord(payload.requestHeaderJson, 'request_header')
+  const requestHeader = parseJsonStringRecord(payload.requestHeaderJson, '请求头')
   if (requestHeader.error) return { ok: false, error: requestHeader.error }
 
-  const metadata = parseJsonObject(payload.metadataJson, 'metadata')
+  const metadata = parseJsonObject(payload.metadataJson, '元数据')
   if (metadata.error) return { ok: false, error: metadata.error }
 
   const groupName = asNullIfEmpty(payload.groupName)
@@ -266,12 +267,12 @@ export async function copyCheckConfigAction(payload: {
   let apiKey: string | null = null
   if (payload.updateApiKey) {
     apiKey = asNullIfEmpty(payload.apiKey)
-    if (!apiKey) return { ok: false, error: '选择更新 api_key 时，api_key 不能为空' }
+    if (!apiKey) return { ok: false, error: '勾选“更新 API 密钥”时，API 密钥不能为空' }
   } else {
     const { data, error } = await admin.from('check_configs').select('api_key').eq('id', sourceId).maybeSingle()
-    if (error) return { ok: false, error: error.message }
+    if (error) return { ok: false, error: normalizeUiErrorMessage(error.message, '复制失败') }
     apiKey = (data as { api_key?: string | null } | null)?.api_key ?? null
-    if (!apiKey) return { ok: false, error: '源配置缺少 api_key，无法沿用；请勾选“更新 API Key”' }
+    if (!apiKey) return { ok: false, error: '源配置缺少 API 密钥，无法沿用；请勾选“更新 API 密钥”' }
   }
 
   const { error: insertError } = await admin.from('check_configs').insert({
@@ -287,7 +288,7 @@ export async function copyCheckConfigAction(payload: {
     group_name: groupName,
   })
 
-  if (insertError) return { ok: false, error: insertError.message }
+  if (insertError) return { ok: false, error: normalizeUiErrorMessage(insertError.message, '复制失败') }
 
   revalidatePath('/protected/configs')
   return { ok: true }
@@ -297,11 +298,11 @@ export async function deleteCheckConfigAction(id: string): Promise<ActionResult>
   await requireSignedInUser()
 
   const normalized = asNullIfEmpty(id)
-  if (!normalized) return { ok: false, error: '缺少 id' }
+  if (!normalized) return { ok: false, error: '缺少配置 ID' }
 
   const admin = createAdminClient()
   const { error } = await admin.from('check_configs').delete().eq('id', normalized)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: normalizeUiErrorMessage(error.message, '删除失败') }
 
   revalidatePath('/protected/configs')
   return { ok: true }
@@ -311,14 +312,14 @@ export async function setEnabledAction(id: string, enabled: boolean): Promise<Ac
   await requireSignedInUser()
 
   const normalized = asNullIfEmpty(id)
-  if (!normalized) return { ok: false, error: '缺少 id' }
+  if (!normalized) return { ok: false, error: '缺少配置 ID' }
 
   const admin = createAdminClient()
   const { error } = await admin
     .from('check_configs')
     .update({ enabled })
     .eq('id', normalized)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: normalizeUiErrorMessage(error.message, '操作失败') }
 
   revalidatePath('/protected/configs')
   return { ok: true }
@@ -331,14 +332,14 @@ export async function setMaintenanceAction(
   await requireSignedInUser()
 
   const normalized = asNullIfEmpty(id)
-  if (!normalized) return { ok: false, error: '缺少 id' }
+  if (!normalized) return { ok: false, error: '缺少配置 ID' }
 
   const admin = createAdminClient()
   const { error } = await admin
     .from('check_configs')
     .update({ is_maintenance: isMaintenance })
     .eq('id', normalized)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: normalizeUiErrorMessage(error.message, '操作失败') }
 
   revalidatePath('/protected/configs')
   return { ok: true }
