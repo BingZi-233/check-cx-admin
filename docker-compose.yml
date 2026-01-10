@@ -9,21 +9,3 @@ services:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
     restart: unless-stopped
-
-  web-dev:
-    profiles: ["dev"]
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: deps
-    ports:
-      - "3000:3000"
-    environment:
-      NODE_ENV: development
-      NEXT_TELEMETRY_DISABLED: "1"
-      CHOKIDAR_USEPOLLING: "true"
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-    command: ["pnpm","dev","--","-H","0.0.0.0","-p","3000"]
