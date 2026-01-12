@@ -58,28 +58,10 @@ const levelToLabel: Record<NotificationLevel, string> = {
   error: '错误',
 }
 
-function toDatetimeLocalValue(iso: string | null) {
-  if (!iso) return ''
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
-    date.getHours()
-  )}:${pad(date.getMinutes())}`
-}
-
-function toIsoOrNull(value: string) {
-  if (!value) return null
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return null
-  return date.toISOString()
-}
-
 type EditorDraft = {
   message: string
   level: NotificationLevel
   is_active: boolean
-  start_time: string
 }
 
 function emptyDraft(): EditorDraft {
@@ -87,7 +69,6 @@ function emptyDraft(): EditorDraft {
     message: '',
     level: 'info',
     is_active: false,
-    start_time: '',
   }
 }
 
@@ -96,7 +77,6 @@ function draftFromNotification(n: SystemNotification): EditorDraft {
     message: n.message ?? '',
     level: n.level,
     is_active: n.is_active,
-    start_time: toDatetimeLocalValue(n.start_time),
   }
 }
 
@@ -176,7 +156,6 @@ export function NotificationsClient({
           message: draft.message,
           level: draft.level,
           is_active: draft.is_active,
-          start_time: toIsoOrNull(draft.start_time),
           created_at: now,
           updated_at: now,
         })
@@ -214,7 +193,6 @@ export function NotificationsClient({
           message: draft.message,
           level: draft.level,
           is_active: draft.is_active,
-          start_time: toIsoOrNull(draft.start_time),
           updated_at: now,
         })
         .eq('id', editing.id)
@@ -306,7 +284,6 @@ export function NotificationsClient({
               <TableHead className="w-[120px]">级别</TableHead>
               <TableHead>内容</TableHead>
               <TableHead className="w-[110px]">状态</TableHead>
-              <TableHead className="w-[180px]">开始时间</TableHead>
               <TableHead className="w-[180px]">创建时间</TableHead>
               <TableHead className="w-[170px] text-right">操作</TableHead>
             </TableRow>
@@ -314,7 +291,7 @@ export function NotificationsClient({
           <TableBody>
             {notifications.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground py-10 text-center">
+                <TableCell colSpan={5} className="text-muted-foreground py-10 text-center">
                   暂无通知
                 </TableCell>
               </TableRow>
@@ -337,7 +314,6 @@ export function NotificationsClient({
                       {n.is_active ? '已激活' : '未激活'}
                     </Button>
                   </TableCell>
-                  <TableCell>{formatLocalDateTimeZh(n.start_time)}</TableCell>
                   <TableCell>{formatLocalDateTimeZh(n.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -519,15 +495,6 @@ function EditorForm({
           </div>
         </FormItem>
       </div>
-
-      <FormItem>
-        <Label>开始时间（可选）</Label>
-        <Input
-          type="datetime-local"
-          value={draft.start_time}
-          onChange={(e) => setDraft({ ...draft, start_time: e.target.value })}
-        />
-      </FormItem>
 
       {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
 

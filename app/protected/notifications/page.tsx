@@ -10,7 +10,6 @@ export type SystemNotification = {
   message: string
   level: NotificationLevel
   is_active: boolean
-  start_time: string | null
   created_at: string
   updated_at: string
 }
