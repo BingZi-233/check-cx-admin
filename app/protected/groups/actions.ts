@@ -4,14 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { normalizeUiErrorMessage } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
-
-type GroupActionState = {
-  ok: boolean
-  message?: string
-  fieldErrors?: Partial<Record<"group_name" | "website_url", string>>
-}
-
-const initialState: GroupActionState = { ok: false }
+import type { GroupActionState } from "./types"
 
 function parseGroupName(value: unknown) {
   const groupName = String(value ?? "").trim()
@@ -128,4 +121,3 @@ export async function deleteGroupAction(
   return { ok: true, message: "已删除" }
 }
 
-export { initialState, type GroupActionState }

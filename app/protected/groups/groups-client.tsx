@@ -26,10 +26,9 @@ import { Input } from "@/components/ui/input"
 import {
   createGroupAction,
   deleteGroupAction,
-  initialState,
   updateGroupAction,
-  type GroupActionState,
 } from "@/app/protected/groups/actions"
+import { initialState, type GroupActionState } from "@/app/protected/groups/types"
 import { normalizeUiErrorMessage } from "@/lib/locale"
 
 type GroupInfoRow = {

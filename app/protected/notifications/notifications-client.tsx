@@ -80,7 +80,6 @@ type EditorDraft = {
   level: NotificationLevel
   is_active: boolean
   start_time: string
-  end_time: string
 }
 
 function emptyDraft(): EditorDraft {
@@ -89,7 +88,6 @@ function emptyDraft(): EditorDraft {
     level: 'info',
     is_active: false,
     start_time: '',
-    end_time: '',
   }
 }
 
@@ -99,7 +97,6 @@ function draftFromNotification(n: SystemNotification): EditorDraft {
     level: n.level,
     is_active: n.is_active,
     start_time: toDatetimeLocalValue(n.start_time),
-    end_time: toDatetimeLocalValue(n.end_time),
   }
 }
 
@@ -180,7 +177,6 @@ export function NotificationsClient({
           level: draft.level,
           is_active: draft.is_active,
           start_time: toIsoOrNull(draft.start_time),
-          end_time: toIsoOrNull(draft.end_time),
           created_at: now,
           updated_at: now,
         })
@@ -219,7 +215,6 @@ export function NotificationsClient({
           level: draft.level,
           is_active: draft.is_active,
           start_time: toIsoOrNull(draft.start_time),
-          end_time: toIsoOrNull(draft.end_time),
           updated_at: now,
         })
         .eq('id', editing.id)
@@ -311,8 +306,7 @@ export function NotificationsClient({
               <TableHead className="w-[120px]">级别</TableHead>
               <TableHead>内容</TableHead>
               <TableHead className="w-[110px]">状态</TableHead>
-              <TableHead className="w-[180px]">开始</TableHead>
-              <TableHead className="w-[180px]">结束</TableHead>
+              <TableHead className="w-[180px]">开始时间</TableHead>
               <TableHead className="w-[180px]">创建时间</TableHead>
               <TableHead className="w-[170px] text-right">操作</TableHead>
             </TableRow>
@@ -320,7 +314,7 @@ export function NotificationsClient({
           <TableBody>
             {notifications.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-muted-foreground py-10 text-center">
+                <TableCell colSpan={6} className="text-muted-foreground py-10 text-center">
                   暂无通知
                 </TableCell>
               </TableRow>
@@ -344,7 +338,6 @@ export function NotificationsClient({
                     </Button>
                   </TableCell>
                   <TableCell>{formatLocalDateTimeZh(n.start_time)}</TableCell>
-                  <TableCell>{formatLocalDateTimeZh(n.end_time)}</TableCell>
                   <TableCell>{formatLocalDateTimeZh(n.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -527,24 +520,14 @@ function EditorForm({
         </FormItem>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <FormItem>
-          <Label>开始时间（可选）</Label>
-          <Input
-            type="datetime-local"
-            value={draft.start_time}
-            onChange={(e) => setDraft({ ...draft, start_time: e.target.value })}
-          />
-        </FormItem>
-        <FormItem>
-          <Label>结束时间（可选）</Label>
-          <Input
-            type="datetime-local"
-            value={draft.end_time}
-            onChange={(e) => setDraft({ ...draft, end_time: e.target.value })}
-          />
-        </FormItem>
-      </div>
+      <FormItem>
+        <Label>开始时间（可选）</Label>
+        <Input
+          type="datetime-local"
+          value={draft.start_time}
+          onChange={(e) => setDraft({ ...draft, start_time: e.target.value })}
+        />
+      </FormItem>
 
       {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
 
