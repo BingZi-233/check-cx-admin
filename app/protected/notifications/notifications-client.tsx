@@ -148,7 +148,6 @@ export function NotificationsClient({
       }
 
       const supabase = createClient()
-      const now = new Date().toISOString()
 
       const { data, error } = await supabase
         .from('system_notifications')
@@ -156,8 +155,6 @@ export function NotificationsClient({
           message: draft.message,
           level: draft.level,
           is_active: draft.is_active,
-          created_at: now,
-          updated_at: now,
         })
         .select('*')
         .single()
@@ -185,7 +182,6 @@ export function NotificationsClient({
       }
 
       const supabase = createClient()
-      const now = new Date().toISOString()
 
       const { data, error } = await supabase
         .from('system_notifications')
@@ -193,7 +189,6 @@ export function NotificationsClient({
           message: draft.message,
           level: draft.level,
           is_active: draft.is_active,
-          updated_at: now,
         })
         .eq('id', editing.id)
         .select('*')
@@ -241,10 +236,9 @@ export function NotificationsClient({
     setPageError(null)
     try {
       const supabase = createClient()
-      const now = new Date().toISOString()
       const { data, error } = await supabase
         .from('system_notifications')
-        .update({ is_active: !n.is_active, updated_at: now })
+        .update({ is_active: !n.is_active })
         .eq('id', n.id)
         .select('*')
         .single()

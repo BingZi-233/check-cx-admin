@@ -11,7 +11,6 @@ export type SystemNotification = {
   level: NotificationLevel
   is_active: boolean
   created_at: string
-  updated_at: string
 }
 
 export default async function NotificationsPage() {
