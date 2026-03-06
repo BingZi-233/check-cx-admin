@@ -116,7 +116,7 @@ http://localhost:3000/auth/callback
 ```yaml
 services:
   check-cx-admin:
-    image: bingzi233/check-cx-admin:v0.1.0
+    image: bingzi233/check-cx-admin:v0.1.1
     container_name: check-cx-admin
     restart: unless-stopped
     ports:
@@ -175,7 +175,7 @@ git push origin v0.1.0
 
 推送后，`docker.yml` 会自动构建并发布：
 
-- `docker.io/bingzi233/check-cx-admin:v0.1.0`
+- `docker.io/bingzi233/check-cx-admin:v0.1.1`
 - `docker.io/bingzi233/check-cx-admin:latest`
 
 ### 手动触发
