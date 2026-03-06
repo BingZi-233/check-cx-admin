@@ -68,6 +68,71 @@ docker compose up -d
 
 镜像运行时直接读取 `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_OR_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`SUPABASE_OAUTH_PROVIDERS`、`ADMIN_EMAILS`，不会把这些值写死进前端产物。
 
+## 生产部署示例
+
+别在生产里盲目跑 `latest`。最简单的正确做法，是固定版本 tag。
+
+### 1. 准备目录
+
+```bash
+mkdir -p /opt/check-cx-admin
+cd /opt/check-cx-admin
+```
+
+### 2. 写入环境变量
+
+创建 `.env`：
+
+```env
+SUPABASE_URL=https://service.check-cx.org
+SUPABASE_PUBLISHABLE_OR_ANON_KEY=你的_anon_key
+SUPABASE_SERVICE_ROLE_KEY=你的_service_role_key
+SUPABASE_OAUTH_PROVIDERS=google,github
+ADMIN_EMAILS=admin@example.com
+```
+
+### 3. 写入生产 compose
+
+创建 `docker-compose.yml`：
+
+```yaml
+services:
+  check-cx-admin:
+    image: bingzi233/check-cx-admin:v0.1.0
+    container_name: check-cx-admin
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+```
+
+如果你前面有 Nginx / Caddy / Traefik，就把容器只绑定到内网端口；这里为了简单，先直接暴露 `3000`。
+
+### 4. 启动
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+### 5. 更新版本
+
+把 `image` 从旧 tag 改成新 tag，然后执行：
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+### 6. 查看日志
+
+```bash
+docker compose logs -f check-cx-admin
+```
+
 ## GitHub Actions
 
 仓库已添加两条工作流：
@@ -79,6 +144,24 @@ Docker 发布工作流需要配置以下 secrets：
 
 - `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
+
+## 发版方式
+
+### 推送版本 tag
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+推送后，`docker.yml` 会自动构建并发布：
+
+- `docker.io/bingzi233/check-cx-admin:v0.1.0`
+- `docker.io/bingzi233/check-cx-admin:latest`
+
+### 手动触发
+
+也可以在 GitHub Actions 页面手动运行 `Build and Push Docker Image`。
 
 ## 当前页面
 
