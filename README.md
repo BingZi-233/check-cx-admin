@@ -32,21 +32,23 @@ pnpm dev
 
 ### 必填
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_OR_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 ### 可选
 
-- `NEXT_PUBLIC_SUPABASE_OAUTH_PROVIDERS`：默认 `google,github`
+- `SUPABASE_OAUTH_PROVIDERS`：默认 `google,github`
 - `ADMIN_EMAILS`：逗号分隔白名单；留空表示任意已登录用户都能进后台
 
 ## 认证说明
 
 - 登录页优先走 OAuth。
 - 邮箱密码登录保留给初始化与兜底。
+- 登录、OAuth 发起、回调、登出全部走服务端。
 - `/dashboard/**` 路由受 Supabase 会话保护。
-- 如果设置了 `ADMIN_EMAILS`，OAuth 回调和后台页面都会校验邮箱白名单。
+- 如果设置了 `ADMIN_EMAILS`，OAuth 回调、密码登录和后台页面都会校验邮箱白名单。
+- 项目认证配置全部改为服务端运行时读取，便于在 Docker 运行时通过环境变量覆盖。
 
 ## 当前页面
 

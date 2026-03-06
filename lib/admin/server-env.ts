@@ -1,27 +1,51 @@
 import "server-only"
 
-import { getPublicSupabaseUrl } from "@/lib/admin/env"
+import { getAuthEnv } from "@/lib/admin/env"
+
+function readServerEnv(name: string) {
+  return process.env[name]?.trim() ?? ""
+}
+
+export function getServerEnv() {
+  const authEnv = getAuthEnv()
+
+  return {
+    supabaseUrl: authEnv.supabaseUrl,
+    publicSupabaseKey: authEnv.supabaseKey,
+    serviceRoleKey: readServerEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    adminEmails: readServerEnv("ADMIN_EMAILS")
+      .split(",")
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean),
+  }
+}
 
 export function getServerSupabaseUrl() {
-  return getPublicSupabaseUrl() || process.env.SUPABASE_URL?.trim() || ""
+  return getServerEnv().supabaseUrl
+}
+
+export function getServerSupabasePublicKey() {
+  return getServerEnv().publicSupabaseKey
 }
 
 export function getServiceRoleKey() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? ""
+  return getServerEnv().serviceRoleKey
 }
 
 export function hasAdminDatabaseEnv() {
-  return Boolean(getServerSupabaseUrl() && getServiceRoleKey())
+  const env = getServerEnv()
+  return Boolean(env.supabaseUrl && env.serviceRoleKey)
 }
 
 export function getAdminDatabaseWarnings() {
   const warnings: string[] = []
+  const env = getServerEnv()
 
-  if (!getServerSupabaseUrl()) {
-    warnings.push("缺少 Supabase URL")
+  if (!env.supabaseUrl) {
+    warnings.push("缺少 SUPABASE_URL")
   }
 
-  if (!getServiceRoleKey()) {
+  if (!env.serviceRoleKey) {
     warnings.push("缺少 SUPABASE_SERVICE_ROLE_KEY，后台无法读写受保护表")
   }
 
@@ -29,16 +53,7 @@ export function getAdminDatabaseWarnings() {
 }
 
 export function getAdminEmails() {
-  const raw = process.env.ADMIN_EMAILS?.trim()
-
-  if (!raw) {
-    return []
-  }
-
-  return raw
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean)
+  return getServerEnv().adminEmails
 }
 
 export function isAllowedAdminEmail(email?: string | null) {

@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server"
 
-import { hasPublicSupabaseEnv } from "@/lib/admin/env"
+import { hasSupabaseAuthEnv } from "@/lib/admin/env"
 import { updateSession } from "@/lib/supabase/middleware"
 
 export async function proxy(request: NextRequest) {
-  if (!hasPublicSupabaseEnv()) {
+  if (!hasSupabaseAuthEnv()) {
     return NextResponse.next({ request })
   }
 

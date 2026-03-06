@@ -6,7 +6,7 @@ import { ShieldCheckIcon } from "lucide-react"
 import { Notice } from "@/components/admin/notice"
 import { LoginForm } from "@/components/login-form"
 import { getOptionalAdminUser } from "@/lib/admin/auth"
-import { getPublicEnvWarnings, hasPublicSupabaseEnv } from "@/lib/admin/env"
+import { getOAuthProviders, getSupabaseAuthWarnings, hasSupabaseAuthEnv } from "@/lib/admin/env"
 
 function resolveErrorMessage(code?: string) {
   switch (code) {
@@ -14,8 +14,12 @@ function resolveErrorMessage(code?: string) {
       return "这个账号不在 ADMIN_EMAILS 白名单里。"
     case "oauth":
       return "OAuth 回调失败，请检查 Supabase 提供商配置。"
+    case "invalid-credentials":
+      return "邮箱或密码不正确。"
     case "missing-env":
       return "Supabase 环境变量未配置，登录流程无法启动。"
+    case "provider":
+      return "OAuth 提供商未启用或配置错误。"
     default:
       return undefined
   }
@@ -34,8 +38,8 @@ export default async function LoginPage({
 
   const params = await searchParams
   const errorCode = Array.isArray(params.error) ? params.error[0] : params.error
-  const publicEnvReady = hasPublicSupabaseEnv()
-  const envWarnings = getPublicEnvWarnings()
+  const authEnvReady = hasSupabaseAuthEnv()
+  const envWarnings = getSupabaseAuthWarnings()
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
@@ -46,7 +50,7 @@ export default async function LoginPage({
           </div>
           check-cx Admin
         </div>
-        {!publicEnvReady ? (
+        {!authEnvReady ? (
           <Notice
             variant="warning"
             title="先把环境变量配好"
@@ -54,8 +58,10 @@ export default async function LoginPage({
           />
         ) : null}
         <LoginForm
-          publicEnvReady={publicEnvReady}
+          authEnvReady={authEnvReady}
           errorMessage={resolveErrorMessage(errorCode)}
+          providers={getOAuthProviders()}
+          nextPath="/dashboard"
         />
       </div>
     </div>

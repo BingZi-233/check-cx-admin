@@ -1,50 +1,68 @@
-const DEFAULT_OAUTH_PROVIDERS = ["google", "github"]
+import "server-only"
 
-export function getPublicSupabaseUrl() {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? ""
+const DEFAULT_OAUTH_PROVIDERS = ["google", "github"] as const
+
+function readEnv(name: string) {
+  return process.env[name]?.trim() ?? ""
 }
 
-export function getPublicSupabaseKey() {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ??
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ??
-    ""
-  )
+export function getAuthEnv() {
+  const supabaseUrl = readEnv("SUPABASE_URL")
+  const supabaseKey = readEnv("SUPABASE_PUBLISHABLE_OR_ANON_KEY")
+  const oauthProvidersRaw = readEnv("SUPABASE_OAUTH_PROVIDERS")
+  const oauthProviders = oauthProvidersRaw
+    ? oauthProvidersRaw
+        .split(",")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+    : [...DEFAULT_OAUTH_PROVIDERS]
+
+  return {
+    supabaseUrl,
+    supabaseKey,
+    oauthProviders:
+      oauthProviders.length > 0 ? oauthProviders : [...DEFAULT_OAUTH_PROVIDERS],
+  }
 }
 
-export function hasPublicSupabaseEnv() {
-  return Boolean(getPublicSupabaseUrl() && getPublicSupabaseKey())
+export function getSupabaseAuthUrl() {
+  return getAuthEnv().supabaseUrl
 }
 
-export function getPublicEnvWarnings() {
+export function getSupabaseAuthKey() {
+  return getAuthEnv().supabaseKey
+}
+
+export function hasSupabaseAuthEnv() {
+  const env = getAuthEnv()
+  return Boolean(env.supabaseUrl && env.supabaseKey)
+}
+
+export function getSupabaseAuthWarnings() {
   const warnings: string[] = []
+  const env = getAuthEnv()
 
-  if (!getPublicSupabaseUrl()) {
-    warnings.push("缺少 NEXT_PUBLIC_SUPABASE_URL")
+  if (!env.supabaseUrl) {
+    warnings.push("缺少 SUPABASE_URL")
   }
 
-  if (!getPublicSupabaseKey()) {
-    warnings.push(
-      "缺少 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY（或 NEXT_PUBLIC_SUPABASE_ANON_KEY）"
-    )
+  if (!env.supabaseKey) {
+    warnings.push("缺少 SUPABASE_PUBLISHABLE_OR_ANON_KEY")
   }
 
   return warnings
 }
 
 export function getOAuthProviders() {
-  const raw = process.env.NEXT_PUBLIC_SUPABASE_OAUTH_PROVIDERS?.trim()
+  return getAuthEnv().oauthProviders
+}
 
-  if (!raw) {
-    return DEFAULT_OAUTH_PROVIDERS
+export function isSupportedOAuthProvider(provider?: string | null) {
+  if (!provider) {
+    return false
   }
 
-  const providers = raw
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean)
-
-  return providers.length > 0 ? providers : DEFAULT_OAUTH_PROVIDERS
+  return getOAuthProviders().includes(provider.trim().toLowerCase())
 }
 
 export function sanitizeRedirectPath(path?: string | null) {

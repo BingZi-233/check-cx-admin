@@ -2,7 +2,7 @@ import "server-only"
 
 import { redirect } from "next/navigation"
 
-import { hasPublicSupabaseEnv } from "@/lib/admin/env"
+import { hasSupabaseAuthEnv } from "@/lib/admin/env"
 import { isAllowedAdminEmail } from "@/lib/admin/server-env"
 import { AdminUser } from "@/lib/admin/types"
 import { createClient } from "@/lib/supabase/server"
@@ -34,7 +34,7 @@ function toAdminUser(user: {
 }
 
 export async function getOptionalAdminUser() {
-  if (!hasPublicSupabaseEnv()) {
+  if (!hasSupabaseAuthEnv()) {
     return null
   }
 
@@ -43,7 +43,7 @@ export async function getOptionalAdminUser() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
+  if (!user || !isAllowedAdminEmail(user.email)) {
     return null
   }
 
@@ -55,10 +55,6 @@ export async function requireAdminUser() {
 
   if (!user) {
     redirect("/login")
-  }
-
-  if (!isAllowedAdminEmail(user.email)) {
-    redirect("/login?error=forbidden")
   }
 
   return user

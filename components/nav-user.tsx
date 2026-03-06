@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import {
   Avatar,
   AvatarFallback,
@@ -23,8 +21,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { createClient } from "@/lib/supabase/client"
-import { ChevronsUpDownIcon, GithubIcon, HomeIcon, LoaderCircleIcon, LogOutIcon } from "lucide-react"
+import {
+  ChevronsUpDownIcon,
+  GithubIcon,
+  HomeIcon,
+  LogOutIcon,
+} from "lucide-react"
 
 export function NavUser({
   user,
@@ -36,24 +38,6 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const router = useRouter()
-  const [errorMessage, setErrorMessage] = useState("")
-  const [isPending, startTransition] = useTransition()
-
-  const handleSignOut = () => {
-    startTransition(async () => {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signOut()
-
-      if (error) {
-        setErrorMessage(error.message)
-        return
-      }
-
-      router.replace("/login")
-      router.refresh()
-    })
-  }
 
   return (
     <SidebarMenu>
@@ -106,13 +90,10 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} disabled={isPending}>
-              {isPending ? <LoaderCircleIcon className="animate-spin" /> : <LogOutIcon />}
+            <DropdownMenuItem render={<a href="/auth/sign-out" />}>
+              <LogOutIcon />
               退出登录
             </DropdownMenuItem>
-            {errorMessage ? (
-              <div className="px-2 pb-2 text-xs text-destructive">{errorMessage}</div>
-            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

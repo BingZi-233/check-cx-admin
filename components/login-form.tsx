@@ -1,12 +1,6 @@
-"use client"
+import { GithubIcon, LogInIcon } from "lucide-react"
 
-import { useMemo, useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
-import { GithubIcon, LoaderCircleIcon, LogInIcon } from "lucide-react"
-
-import { getOAuthProviders } from "@/lib/admin/env"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -48,83 +42,16 @@ function ProviderIcon({ provider }: { provider: string }) {
 export function LoginForm({
   className,
   errorMessage,
-  publicEnvReady,
+  authEnvReady,
+  providers,
+  nextPath,
   ...props
 }: React.ComponentProps<"div"> & {
   errorMessage?: string
-  publicEnvReady: boolean
+  authEnvReady: boolean
+  providers: string[]
+  nextPath: string
 }) {
-  const router = useRouter()
-  const supabase = useMemo(() => {
-    if (!publicEnvReady) {
-      return null
-    }
-
-    return createClient()
-  }, [publicEnvReady])
-  const providers = useMemo(() => getOAuthProviders(), [])
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [message, setMessage] = useState(errorMessage ?? "")
-  const [isOAuthPending, startOAuthTransition] = useTransition()
-  const [isPasswordPending, startPasswordTransition] = useTransition()
-
-  const isPending = isOAuthPending || isPasswordPending
-
-  const handleOAuthLogin = (provider: string) => {
-    if (!supabase) {
-      setMessage("Supabase 环境变量未配置，无法发起 OAuth 登录")
-      return
-    }
-
-    setMessage("")
-
-    startOAuthTransition(async () => {
-      const redirectTo = `${window.location.origin}/auth/callback?next=/dashboard`
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider as "google" | "github" | "apple",
-        options: {
-          redirectTo,
-        },
-      })
-
-      if (error) {
-        setMessage(error.message)
-        return
-      }
-
-      if (data.url) {
-        window.location.assign(data.url)
-      }
-    })
-  }
-
-  const handlePasswordLogin = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    if (!supabase) {
-      setMessage("Supabase 环境变量未配置，无法进行密码登录")
-      return
-    }
-
-    setMessage("")
-
-    startPasswordTransition(async () => {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        setMessage(error.message)
-        return
-      }
-
-      router.replace("/dashboard")
-      router.refresh()
-    })
-  }
-
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -135,21 +62,31 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handlePasswordLogin}>
+          <form action="/auth/sign-in/password" method="post">
+            <input type="hidden" name="next" value={nextPath} />
             <FieldGroup>
               <Field>
-                {providers.map((provider) => (
-                  <Button
-                    key={provider}
-                    variant="outline"
-                    type="button"
-                    disabled={isPending || !publicEnvReady}
-                    onClick={() => handleOAuthLogin(provider)}
-                  >
-                    <ProviderIcon provider={provider} />
-                    使用 {providerLabel(provider)} 登录
-                  </Button>
-                ))}
+                {providers.map((provider) => {
+                  const href = `/auth/sign-in?provider=${encodeURIComponent(provider)}&next=${encodeURIComponent(nextPath)}`
+
+                  if (!authEnvReady) {
+                    return (
+                      <Button key={provider} variant="outline" type="button" disabled>
+                        <ProviderIcon provider={provider} />
+                        使用 {providerLabel(provider)} 登录
+                      </Button>
+                    )
+                  }
+
+                  return (
+                    <Button key={provider} variant="outline" type="button" asChild>
+                      <a href={href}>
+                        <ProviderIcon provider={provider} />
+                        使用 {providerLabel(provider)} 登录
+                      </a>
+                    </Button>
+                  )
+                })}
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 或使用邮箱密码
@@ -158,10 +95,9 @@ export function LoginForm({
                 <FieldLabel htmlFor="email">邮箱</FieldLabel>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="admin@example.com"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
                   required
                 />
               </Field>
@@ -169,24 +105,15 @@ export function LoginForm({
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">密码</FieldLabel>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                />
+                <Input id="password" name="password" type="password" required />
               </Field>
-              {message ? (
+              {errorMessage ? (
                 <FieldDescription className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-destructive">
-                  {message}
+                  {errorMessage}
                 </FieldDescription>
               ) : null}
               <Field>
-                <Button type="submit" disabled={isPending || !publicEnvReady}>
-                  {isPending ? (
-                    <LoaderCircleIcon className="size-4 animate-spin" />
-                  ) : null}
+                <Button type="submit" disabled={!authEnvReady}>
                   登录
                 </Button>
                 <FieldDescription className="text-center">
