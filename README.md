@@ -50,6 +50,36 @@ pnpm dev
 - 如果设置了 `ADMIN_EMAILS`，OAuth 回调、密码登录和后台页面都会校验邮箱白名单。
 - 项目认证配置全部改为服务端运行时读取，便于在 Docker 运行时通过环境变量覆盖。
 
+## Docker
+
+### 本地构建镜像
+
+```bash
+docker build -t check-cx-admin:local .
+```
+
+### 本地运行容器
+
+先准备 `.env`，变量名和 `.env.example` 一致。
+
+```bash
+docker compose up -d
+```
+
+镜像运行时直接读取 `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_OR_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`SUPABASE_OAUTH_PROVIDERS`、`ADMIN_EMAILS`，不会把这些值写死进前端产物。
+
+## GitHub Actions
+
+仓库已添加两条工作流：
+
+- `.github/workflows/ci.yml`：在 `main` push 和 PR 上执行 `pnpm lint`、`pnpm build`
+- `.github/workflows/docker.yml`：推送 `v*` tag 或手动触发时，发布 `docker.io/bingzi233/check-cx-admin`
+
+Docker 发布工作流需要配置以下 secrets：
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
 ## 当前页面
 
 - `/login`：登录页

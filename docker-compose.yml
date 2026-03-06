@@ -1,0 +1,11 @@
+services:
+  check-cx-admin:
+    image: bingzi233/check-cx-admin:latest
+    container_name: check-cx-admin
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
