@@ -6,9 +6,26 @@ function readEnv(name: string) {
   return process.env[name]?.trim() ?? ""
 }
 
+function readHeader(headers: Headers, name: string) {
+  return headers.get(name)?.split(",")[0]?.trim() ?? ""
+}
+
+function normalizeOrigin(value: string) {
+  if (!value) {
+    return ""
+  }
+
+  try {
+    return new URL(value).origin
+  } catch {
+    return ""
+  }
+}
+
 export function getAuthEnv() {
   const supabaseUrl = readEnv("SUPABASE_URL")
   const supabaseKey = readEnv("SUPABASE_PUBLISHABLE_OR_ANON_KEY")
+  const appUrl = normalizeOrigin(readEnv("APP_URL") || readEnv("SITE_URL"))
   const oauthProvidersRaw = readEnv("SUPABASE_OAUTH_PROVIDERS")
   const oauthProviders = oauthProvidersRaw
     ? oauthProvidersRaw
@@ -20,6 +37,7 @@ export function getAuthEnv() {
   return {
     supabaseUrl,
     supabaseKey,
+    appUrl,
     oauthProviders:
       oauthProviders.length > 0 ? oauthProviders : [...DEFAULT_OAUTH_PROVIDERS],
   }
@@ -31,6 +49,10 @@ export function getSupabaseAuthUrl() {
 
 export function getSupabaseAuthKey() {
   return getAuthEnv().supabaseKey
+}
+
+export function getAppUrl() {
+  return getAuthEnv().appUrl
 }
 
 export function hasSupabaseAuthEnv() {
@@ -63,6 +85,22 @@ export function isSupportedOAuthProvider(provider?: string | null) {
   }
 
   return getOAuthProviders().includes(provider.trim().toLowerCase())
+}
+
+export function getRequestOrigin(request: Request) {
+  const appUrl = getAppUrl()
+
+  if (appUrl) {
+    return appUrl
+  }
+
+  const requestUrl = new URL(request.url)
+  const forwardedProto = readHeader(request.headers, "x-forwarded-proto")
+  const forwardedHost = readHeader(request.headers, "x-forwarded-host")
+  const host = forwardedHost || readHeader(request.headers, "host") || requestUrl.host
+  const protocol = forwardedProto || requestUrl.protocol.replace(":", "")
+
+  return `${protocol}://${host}`
 }
 
 export function sanitizeRedirectPath(path?: string | null) {

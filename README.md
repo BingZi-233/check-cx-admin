@@ -38,6 +38,7 @@ pnpm dev
 
 ### 可选
 
+- `APP_URL`：后台对外访问地址，反向代理或 Docker 生产环境强烈建议设置，例如 `https://admin.example.com`
 - `SUPABASE_OAUTH_PROVIDERS`：默认 `google,github`
 - `ADMIN_EMAILS`：逗号分隔白名单；留空表示任意已登录用户都能进后台
 
@@ -49,6 +50,8 @@ pnpm dev
 - `/dashboard/**` 路由受 Supabase 会话保护。
 - 如果设置了 `ADMIN_EMAILS`，OAuth 回调、密码登录和后台页面都会校验邮箱白名单。
 - 项目认证配置全部改为服务端运行时读取，便于在 Docker 运行时通过环境变量覆盖。
+- 生产环境请设置 `APP_URL`，否则 OAuth 回调地址会依赖请求头，反代配置不对时就可能变成 `http://localhost:3000`。
+- 还要在 Supabase Auth 的 Redirect URLs 里加入 `APP_URL/auth/callback`，例如 `https://admin.example.com/auth/callback`。
 
 ## Docker
 
@@ -66,7 +69,7 @@ docker build -t check-cx-admin:local .
 docker compose up -d
 ```
 
-镜像运行时直接读取 `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_OR_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`SUPABASE_OAUTH_PROVIDERS`、`ADMIN_EMAILS`，不会把这些值写死进前端产物。
+镜像运行时直接读取 `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_OR_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`APP_URL`、`SUPABASE_OAUTH_PROVIDERS`、`ADMIN_EMAILS`，不会把这些值写死进前端产物。
 
 ## 生产部署示例
 
@@ -87,11 +90,26 @@ cd /opt/check-cx-admin
 SUPABASE_URL=https://service.check-cx.org
 SUPABASE_PUBLISHABLE_OR_ANON_KEY=你的_anon_key
 SUPABASE_SERVICE_ROLE_KEY=你的_service_role_key
+APP_URL=https://admin.example.com
 SUPABASE_OAUTH_PROVIDERS=google,github
 ADMIN_EMAILS=admin@example.com
 ```
 
-### 3. 写入生产 compose
+### 3. 配置 Supabase Auth 回调白名单
+
+至少加入这一条：
+
+```text
+https://admin.example.com/auth/callback
+```
+
+如果你本地开发还要测 OAuth，再额外加：
+
+```text
+http://localhost:3000/auth/callback
+```
+
+### 4. 写入生产 compose
 
 创建 `docker-compose.yml`：
 
@@ -107,18 +125,19 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      APP_URL: ${APP_URL}
 ```
 
 如果你前面有 Nginx / Caddy / Traefik，就把容器只绑定到内网端口；这里为了简单，先直接暴露 `3000`。
 
-### 4. 启动
+### 5. 启动
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-### 5. 更新版本
+### 6. 更新版本
 
 把 `image` 从旧 tag 改成新 tag，然后执行：
 
@@ -127,7 +146,7 @@ docker compose pull
 docker compose up -d
 ```
 
-### 6. 查看日志
+### 7. 查看日志
 
 ```bash
 docker compose logs -f check-cx-admin

@@ -9,3 +9,4 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      APP_URL: ${APP_URL}
