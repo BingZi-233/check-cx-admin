@@ -1,0 +1,170 @@
+import Link from "next/link"
+import { notFound } from "next/navigation"
+
+import { deleteConfigAction, updateConfigAction } from "@/app/dashboard/configs/actions"
+import { Notice } from "@/components/admin/notice"
+import { PageHeader } from "@/components/admin/page-header"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { formatDateTime } from "@/lib/admin/format"
+import { stringifyJson } from "@/lib/admin/json"
+import { getConfigById, listTemplates } from "@/lib/admin/queries"
+import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
+
+function getParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+export default async function EditConfigPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const { id } = await params
+  const query = await searchParams
+  const error = getParam(query.error)
+  const success = getParam(query.success)
+
+  if (!hasAdminDatabaseEnv()) {
+    return <PageHeader title="编辑配置" description="缺少 service role，这页不会工作。" />
+  }
+
+  const [config, templates] = await Promise.all([getConfigById(id), listTemplates()])
+
+  if (!config) {
+    notFound()
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={`编辑：${config.name}`}
+        description={`创建于 ${formatDateTime(config.created_at)}，更新于 ${formatDateTime(config.updated_at)}`}
+        actions={
+          <Button variant="outline" render={<Link href="/dashboard/configs" />}>
+            返回列表
+          </Button>
+        }
+      />
+      {success ? <Notice title="保存成功" description={success} variant="success" /> : null}
+      {error ? <Notice title="保存失败" description={error} variant="warning" /> : null}
+      <Card>
+        <CardHeader>
+          <CardTitle>编辑配置</CardTitle>
+          <CardDescription>
+            谨慎删除。`check_history` 会跟着一起被级联删掉。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={updateConfigAction} className="grid gap-5 md:grid-cols-2">
+            <input type="hidden" name="id" value={config.id} />
+            <div className="space-y-2">
+              <Label htmlFor="name">名称</Label>
+              <Input id="name" name="name" defaultValue={config.name} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">Provider 类型</Label>
+              <select
+                id="type"
+                name="type"
+                className="flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+                defaultValue={config.type}
+              >
+                <option value="openai">OpenAI</option>
+                <option value="gemini">Gemini</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="model">模型</Label>
+              <Input id="model" name="model" defaultValue={config.model} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="group_name">分组名</Label>
+              <Input id="group_name" name="group_name" defaultValue={config.group_name ?? ""} />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="endpoint">接口地址</Label>
+              <Input id="endpoint" name="endpoint" defaultValue={config.endpoint} required />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="api_key">API Key</Label>
+              <Input id="api_key" name="api_key" defaultValue={config.api_key} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="template_id">请求模板</Label>
+              <select
+                id="template_id"
+                name="template_id"
+                className="flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+                defaultValue={config.template_id ?? ""}
+              >
+                <option value="">不使用模板</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name} · {template.type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-6 pt-7 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" name="enabled" defaultChecked={Boolean(config.enabled)} />
+                启用检测
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="is_maintenance"
+                  defaultChecked={Boolean(config.is_maintenance)}
+                />
+                维护模式
+              </label>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="request_header">自定义请求头 JSON</Label>
+              <Textarea
+                id="request_header"
+                name="request_header"
+                rows={8}
+                defaultValue={stringifyJson(config.request_header)}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="metadata">metadata JSON</Label>
+              <Textarea
+                id="metadata"
+                name="metadata"
+                rows={8}
+                defaultValue={stringifyJson(config.metadata)}
+              />
+            </div>
+            <div className="flex items-center gap-3 md:col-span-2">
+              <Button type="submit">保存更改</Button>
+              <Button variant="outline" render={<Link href="/dashboard/configs" />}>
+                取消
+              </Button>
+            </div>
+          </form>
+          <form action={deleteConfigAction} className="mt-6 border-t pt-6">
+            <input type="hidden" name="id" value={config.id} />
+            <Button type="submit" variant="destructive">
+              删除配置
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

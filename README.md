@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# check-cx-admin
 
-## Getting Started
+`check-cx-admin` 是 `BingZi-233/check-cx` 的后台管理项目，用来管理以下核心对象：
 
-First, run the development server:
+- `check_configs`：Provider 配置
+- `check_request_templates`：请求模板
+- `group_info`：分组信息
+- `system_notifications`：系统通知
+- `check_history`：检测历史（只读）
+- `check_poller_leases`：轮询主节点状态（只读）
+
+技术栈保持克制，没有乱加花活：
+
+- Next.js 16 App Router
+- React 19
+- shadcn/ui
+- Supabase Auth + Supabase Database
+
+## 本地开发
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+默认地址：`http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 环境变量
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+见 `.env.example`。
 
-## Learn More
+### 必填
 
-To learn more about Next.js, take a look at the following resources:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 可选
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `NEXT_PUBLIC_SUPABASE_OAUTH_PROVIDERS`：默认 `google,github`
+- `ADMIN_EMAILS`：逗号分隔白名单；留空表示任意已登录用户都能进后台
 
-## Deploy on Vercel
+## 认证说明
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 登录页优先走 OAuth。
+- 邮箱密码登录保留给初始化与兜底。
+- `/dashboard/**` 路由受 Supabase 会话保护。
+- 如果设置了 `ADMIN_EMAILS`，OAuth 回调和后台页面都会校验邮箱白名单。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 当前页面
+
+- `/login`：登录页
+- `/dashboard`：概览
+- `/dashboard/configs`：Provider 配置
+- `/dashboard/templates`：请求模板
+- `/dashboard/groups`：分组信息
+- `/dashboard/notifications`：系统通知
+- `/dashboard/history`：检测历史
+- `/dashboard/system`：运行状态
+
+## 数据权限建议
+
+这个后台默认通过 `SUPABASE_SERVICE_ROLE_KEY` 读写管理表，因为上游项目当前 RLS 主要偏前台读取，并没有给管理后台准备完整的写策略。
+
+别把 `SUPABASE_SERVICE_ROLE_KEY` 暴露到客户端。这个项目已经把它限制在服务端使用。
