@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { PlusIcon } from "lucide-react"
+import { CopyIcon, PlusIcon } from "lucide-react"
 
 import { Notice } from "@/components/admin/notice"
 import { PageHeader } from "@/components/admin/page-header"
@@ -67,6 +67,7 @@ export default async function ConfigsPage({
                 <th className="py-3 pr-4">状态</th>
                 <th className="py-3 pr-4">Key</th>
                 <th className="py-3">更新时间</th>
+                <th className="py-3 text-right">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -88,6 +89,15 @@ export default async function ConfigsPage({
                   </td>
                   <td className="py-3 pr-4 font-mono text-xs">{maskSecret(item.api_key)}</td>
                   <td className="py-3">{formatDateTime(item.updated_at)}</td>
+                  <td className="py-3 text-right">
+                    <Button
+                      variant="outline"
+                      render={<Link href={`/dashboard/configs/new?source=${item.id}`} />}
+                    >
+                      <CopyIcon />
+                      复制
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>

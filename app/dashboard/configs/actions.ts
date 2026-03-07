@@ -8,6 +8,16 @@ import { requiredString, optionalString, booleanFromForm, parseProviderType, wit
 import { parseOptionalJson } from "@/lib/admin/json"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
+function withSourceMessage(message: string, sourceId: string | null) {
+  const url = new URL(withMessage("/dashboard/configs/new", "error", message), "http://localhost")
+
+  if (sourceId) {
+    url.searchParams.set("source", sourceId)
+  }
+
+  return `${url.pathname}?${url.searchParams.toString()}`
+}
+
 async function parseConfigPayload(formData: FormData) {
   const client = createAdminClient()
   const type = parseProviderType(requiredString(formData, "type", "Provider 类型"))
@@ -51,6 +61,8 @@ async function parseConfigPayload(formData: FormData) {
 export async function createConfigAction(formData: FormData) {
   await requireAdminUser()
 
+  const sourceId = optionalString(formData, "source_config_id")
+
   try {
     const payload = await parseConfigPayload(formData)
     const client = createAdminClient()
@@ -61,7 +73,7 @@ export async function createConfigAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "创建配置失败"
-    redirect(withMessage("/dashboard/configs/new", "error", message))
+    redirect(withSourceMessage(message, sourceId))
   }
 
   revalidatePath("/dashboard")
