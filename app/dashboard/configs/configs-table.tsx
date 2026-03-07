@@ -10,17 +10,10 @@ import { Button } from "@/components/ui/button"
 import { formatDate, formatDateTime, maskSecret } from "@/lib/admin/format"
 import type { CheckConfigRecord } from "@/lib/admin/types"
 
-type TemplateOption = {
-  id: string
-  name: string
-  type: CheckConfigRecord["type"]
-}
-
 type ConfigsTableProps = {
   configs: CheckConfigRecord[]
   returnPath: string
-  groupOptions: string[]
-  templateOptions: TemplateOption[]
+  templateEntries: Array<[string, string]>
 }
 
 function formatTemplateLabel(value: string) {
@@ -28,12 +21,10 @@ function formatTemplateLabel(value: string) {
   return chars.length > 10 ? `${chars.slice(0, 10).join("")}...` : value
 }
 
-export function ConfigsTable({ configs, returnPath, groupOptions, templateOptions }: ConfigsTableProps) {
+export function ConfigsTable({ configs, returnPath, templateEntries }: ConfigsTableProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [groupName, setGroupName] = useState("")
-  const [templateId, setTemplateId] = useState("")
   const selectAllRef = useRef<HTMLInputElement>(null)
-  const templateMap = useMemo(() => new Map(templateOptions.map((item) => [item.id, item.name])), [templateOptions])
+  const templateMap = useMemo(() => new Map(templateEntries), [templateEntries])
   const configIds = useMemo(() => configs.map((item) => item.id), [configs])
   const configIdSet = useMemo(() => new Set(configIds), [configIds])
   const visibleSelectedIds = useMemo(
@@ -47,15 +38,13 @@ export function ConfigsTable({ configs, returnPath, groupOptions, templateOption
       return
     }
 
-    const allSelectedNow = configs.length > 0 && visibleSelectedIds.length === configs.length
-    const someSelected = visibleSelectedIds.length > 0 && !allSelectedNow
+    const allSelected = configs.length > 0 && visibleSelectedIds.length === configs.length
+    const someSelected = visibleSelectedIds.length > 0 && !allSelected
     selectAllRef.current.indeterminate = someSelected
   }, [configs.length, visibleSelectedIds])
 
   const allSelected = configs.length > 0 && visibleSelectedIds.length === configs.length
   const hasSelection = visibleSelectedIds.length > 0
-  const canSetGroup = hasSelection && groupName.trim().length > 0
-  const canSetTemplate = hasSelection && templateId.length > 0
 
   function toggleConfig(id: string, checked: boolean) {
     setSelectedIds((current) => {
@@ -91,98 +80,46 @@ export function ConfigsTable({ configs, returnPath, groupOptions, templateOption
   return (
     <form action={batchConfigAction} onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="return_to" value={returnPath} />
-      <div className="space-y-3 rounded-md border bg-muted/30 p-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-muted-foreground">
-            {hasSelection
-              ? `已选 ${visibleSelectedIds.length} 条。批量动作只打在这批配置上。`
-              : "先勾选配置，再做批量启停、维护、分组、模板切换或删除。"}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" name="operation" value="enable" variant="outline" disabled={!hasSelection}>
-              批量启用
-            </Button>
-            <Button type="submit" name="operation" value="disable" variant="outline" disabled={!hasSelection}>
-              批量停用
-            </Button>
-            <Button
-              type="submit"
-              name="operation"
-              value="maintenance_on"
-              variant="outline"
-              disabled={!hasSelection}
-            >
-              批量维护
-            </Button>
-            <Button
-              type="submit"
-              name="operation"
-              value="maintenance_off"
-              variant="outline"
-              disabled={!hasSelection}
-            >
-              取消维护
-            </Button>
-            <Button
-              type="submit"
-              name="operation"
-              value="delete"
-              variant="destructive"
-              disabled={!hasSelection}
-            >
-              批量删除
-            </Button>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3">
+        <div className="text-sm text-muted-foreground">
+          {hasSelection
+            ? `已选 ${visibleSelectedIds.length} 条。批量操作只打在这批配置上。`
+            : "先勾选配置，再做批量启停、维护切换或删除。"}
         </div>
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-          <label className="space-y-2">
-            <span className="text-sm font-medium">批量改分组</span>
-            <input
-              name="batch_group_name"
-              value={groupName}
-              list="config-group-options"
-              onChange={(event) => setGroupName(event.target.value)}
-              placeholder="输入分组名"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
-            />
-            <datalist id="config-group-options">
-              {groupOptions.map((item) => (
-                <option key={item} value={item} />
-              ))}
-            </datalist>
-          </label>
-          <div className="flex flex-wrap items-end gap-2">
-            <Button type="submit" name="operation" value="set_group" variant="outline" disabled={!canSetGroup}>
-              应用分组
-            </Button>
-            <Button type="submit" name="operation" value="clear_group" variant="outline" disabled={!hasSelection}>
-              清空分组
-            </Button>
-          </div>
-          <label className="space-y-2">
-            <span className="text-sm font-medium">批量换模板</span>
-            <select
-              name="batch_template_id"
-              value={templateId}
-              onChange={(event) => setTemplateId(event.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
-            >
-              <option value="">选择模板</option>
-              {templateOptions.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name} · {item.type}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex flex-wrap items-end gap-2">
-            <Button type="submit" name="operation" value="set_template" variant="outline" disabled={!canSetTemplate}>
-              应用模板
-            </Button>
-            <Button type="submit" name="operation" value="clear_template" variant="outline" disabled={!hasSelection}>
-              清空模板
-            </Button>
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="submit" name="operation" value="enable" variant="outline" disabled={!hasSelection}>
+            批量启用
+          </Button>
+          <Button type="submit" name="operation" value="disable" variant="outline" disabled={!hasSelection}>
+            批量停用
+          </Button>
+          <Button
+            type="submit"
+            name="operation"
+            value="maintenance_on"
+            variant="outline"
+            disabled={!hasSelection}
+          >
+            批量维护
+          </Button>
+          <Button
+            type="submit"
+            name="operation"
+            value="maintenance_off"
+            variant="outline"
+            disabled={!hasSelection}
+          >
+            取消维护
+          </Button>
+          <Button
+            type="submit"
+            name="operation"
+            value="delete"
+            variant="destructive"
+            disabled={!hasSelection}
+          >
+            批量删除
+          </Button>
         </div>
       </div>
       <div className="overflow-x-auto">

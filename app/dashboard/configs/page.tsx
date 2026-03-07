@@ -225,8 +225,7 @@ export default async function ConfigsPage({
           <ConfigsTable
             configs={filteredConfigs}
             returnPath={returnPath}
-            groupOptions={groupNames}
-            templateOptions={templates.map((item) => ({ id: item.id, name: item.name, type: item.type }))}
+            templateEntries={Array.from(templateMap.entries())}
           />
         </CardContent>
       </Card>
