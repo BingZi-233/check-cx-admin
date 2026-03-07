@@ -182,12 +182,12 @@ export async function batchConfigAction(formData: FormData) {
   await requireAdminUser()
 
   const returnPath = getConfigsReturnPath(formData)
+  let successMessage = ""
 
   try {
     const ids = getSelectedConfigIds(formData)
     const operation = parseBatchConfigOperation(formData.get("operation"))
     const client = createAdminClient()
-    let successMessage = ""
 
     switch (operation) {
       case "enable": {
@@ -247,12 +247,12 @@ export async function batchConfigAction(formData: FormData) {
         break
       }
     }
-
-    revalidatePath("/dashboard")
-    revalidatePath("/dashboard/configs")
-    redirect(withPathMessage(returnPath, "success", successMessage))
   } catch (error) {
     const message = error instanceof Error ? error.message : "批量操作失败"
     redirect(withPathMessage(returnPath, "error", message))
   }
+
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/configs")
+  redirect(withPathMessage(returnPath, "success", successMessage))
 }
