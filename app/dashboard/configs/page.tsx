@@ -54,7 +54,11 @@ export default async function ConfigsPage({
   const [configs, templates] = await Promise.all([listConfigs(), listTemplates()])
   const templateMap = new Map(templates.map((item) => [item.id, item.name]))
   const groupNames = Array.from(
-    new Set(configs.map((item) => item.group_name?.trim()).filter(Boolean))
+    new Set(
+      configs
+        .map((item) => item.group_name?.trim())
+        .filter((item): item is string => Boolean(item))
+    )
   ).sort((left, right) => left.localeCompare(right, "zh-Hans-CN"))
 
   const normalizedKeyword = keyword.toLowerCase()
