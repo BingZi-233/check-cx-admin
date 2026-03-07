@@ -1,9 +1,8 @@
 import Link from "next/link"
-import { CopyIcon, PlusIcon } from "lucide-react"
+import { PlusIcon } from "lucide-react"
 
 import { Notice } from "@/components/admin/notice"
 import { PageHeader } from "@/components/admin/page-header"
-import { BooleanBadge, ProviderBadge } from "@/components/admin/status-badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -13,19 +12,15 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { formatDate, formatDateTime, maskSecret } from "@/lib/admin/format"
 import { listConfigs, listTemplates } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
+
+import { ConfigsTable } from "./configs-table"
 
 const selectClassName = "flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
 
 function getParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
-}
-
-function formatTemplateLabel(value: string) {
-  const chars = Array.from(value)
-  return chars.length > 10 ? `${chars.slice(0, 10).join("")}...` : value
 }
 
 export default async function ConfigsPage({
@@ -108,6 +103,36 @@ export default async function ConfigsPage({
   const hasActiveFilters = [keyword, type, groupName, templateId, enabled, maintenance].some(
     (value) => value.length > 0
   )
+  const returnPath = (() => {
+    const search = new URLSearchParams()
+
+    if (keyword) {
+      search.set("keyword", keyword)
+    }
+
+    if (type) {
+      search.set("type", type)
+    }
+
+    if (groupName) {
+      search.set("group_name", groupName)
+    }
+
+    if (templateId) {
+      search.set("template_id", templateId)
+    }
+
+    if (enabled) {
+      search.set("enabled", enabled)
+    }
+
+    if (maintenance) {
+      search.set("maintenance", maintenance)
+    }
+
+    const query = search.toString()
+    return query.length > 0 ? `/dashboard/configs?${query}` : "/dashboard/configs"
+  })()
 
   return (
     <div className="space-y-6">
@@ -197,98 +222,12 @@ export default async function ConfigsPage({
               </Button>
             </div>
           </form>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1260px] table-fixed text-left text-sm">
-              <colgroup>
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "8%" }} />
-                <col style={{ width: "13%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "9%" }} />
-                <col style={{ width: "15%" }} />
-                <col style={{ width: "11%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "96px" }} />
-              </colgroup>
-              <thead className="text-xs text-muted-foreground">
-                <tr className="border-b">
-                  <th className="py-3 pr-4">名称</th>
-                  <th className="py-3 pr-4">Provider</th>
-                  <th className="py-3 pr-4">模型</th>
-                  <th className="py-3 pr-4">分组</th>
-                  <th className="py-3 pr-4">模板</th>
-                  <th className="py-3 pr-4">状态</th>
-                  <th className="py-3 pr-4">Key</th>
-                  <th className="py-3">更新时间</th>
-                  <th className="py-3">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredConfigs.length > 0 ? (
-                  filteredConfigs.map((item) => (
-                    <tr key={item.id} className="border-b align-top last:border-0">
-                      <td className="py-3 pr-4">
-                        <Link href={`/dashboard/configs/${item.id}`} className="font-medium hover:underline">
-                          {item.name}
-                        </Link>
-                        <div className="mt-1 line-clamp-2 break-all text-xs text-muted-foreground" title={item.endpoint}>
-                          {item.endpoint}
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4"><ProviderBadge type={item.type} /></td>
-                      <td className="py-3 pr-4">
-                        <div className="truncate" title={item.model}>
-                          {item.model}
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <div className="truncate" title={item.group_name || "-"}>
-                          {item.group_name || "-"}
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <div
-                          className="truncate"
-                          title={item.template_id ? templateMap.get(item.template_id) ?? item.template_id : "-"}
-                        >
-                          {item.template_id
-                            ? formatTemplateLabel(templateMap.get(item.template_id) ?? item.template_id)
-                            : "-"}
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <div className="flex flex-wrap gap-2">
-                          <BooleanBadge active={Boolean(item.enabled)} trueLabel="启用" falseLabel="停用" />
-                          <BooleanBadge active={Boolean(item.is_maintenance)} trueLabel="维护中" falseLabel="非维护" />
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 font-mono text-xs">
-                        <div className="truncate" title={maskSecret(item.api_key)}>
-                          {maskSecret(item.api_key)}
-                        </div>
-                      </td>
-                      <td className="py-3" title={formatDateTime(item.updated_at)}>{formatDate(item.updated_at)}</td>
-                      <td className="py-3">
-                        <Button
-                          variant="outline"
-                          render={<Link href={`/dashboard/configs/new?source=${item.id}`} />}
-                        >
-                          <CopyIcon />
-                          复制
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
-                      没有匹配的配置。把筛选条件收一收，别把自己也筛没了。
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <ConfigsTable
+            configs={filteredConfigs}
+            returnPath={returnPath}
+            groupOptions={groupNames}
+            templateOptions={templates.map((item) => ({ id: item.id, name: item.name, type: item.type }))}
+          />
         </CardContent>
       </Card>
     </div>
