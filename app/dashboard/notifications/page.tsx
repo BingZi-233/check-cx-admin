@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { Notice } from "@/components/admin/notice"
+import { MarkdownPreview } from "@/components/admin/markdown-preview"
 import { PageHeader } from "@/components/admin/page-header"
 import { NotificationLevelBadge } from "@/components/admin/status-badge"
 import { Badge } from "@/components/ui/badge"
@@ -52,7 +53,7 @@ export default async function NotificationsPage({
         <CardHeader>
           <CardTitle>通知列表</CardTitle>
           <CardDescription>
-            内容支持 Markdown，但这里先只做纯文本编辑，不玩花活。
+            编辑仍然是纯文本输入，但下面的预览按 Markdown 渲染。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -77,9 +78,7 @@ export default async function NotificationsPage({
                   </Button>
                 </div>
               </div>
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {notification.message}
-              </p>
+              <MarkdownPreview content={notification.message} className="text-muted-foreground" />
             </div>
           ))}
         </CardContent>
