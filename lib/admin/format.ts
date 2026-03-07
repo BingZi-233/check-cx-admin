@@ -5,12 +5,24 @@ const dateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
   timeStyle: "short",
 })
 
+const dateFormatter = new Intl.DateTimeFormat("zh-CN", {
+  dateStyle: "medium",
+})
+
 export function formatDateTime(value?: string | null) {
   if (!value) {
     return "-"
   }
 
   return dateTimeFormatter.format(new Date(value))
+}
+
+export function formatDate(value?: string | null) {
+  if (!value) {
+    return "-"
+  }
+
+  return dateFormatter.format(new Date(value))
 }
 
 export function maskSecret(secret?: string | null) {
