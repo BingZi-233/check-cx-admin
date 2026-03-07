@@ -6,9 +6,9 @@ import { redirect } from "next/navigation"
 import { requireAdminUser } from "@/lib/admin/auth"
 import {
   booleanFromForm,
-  encodeMessage,
   parseNotificationLevel,
   requiredString,
+  withMessage,
 } from "@/lib/admin/forms"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
@@ -34,12 +34,12 @@ export async function createNotificationAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "创建通知失败"
-    redirect(`/dashboard/notifications/new?error=${encodeMessage(message)}`)
+    redirect(withMessage("/dashboard/notifications/new", "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/notifications")
-  redirect("/dashboard/notifications?success=系统通知已创建")
+  redirect(withMessage("/dashboard/notifications", "success", "系统通知已创建"))
 }
 
 export async function updateNotificationAction(formData: FormData) {
@@ -59,13 +59,13 @@ export async function updateNotificationAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "更新通知失败"
-    redirect(`/dashboard/notifications/${id}?error=${encodeMessage(message)}`)
+    redirect(withMessage(`/dashboard/notifications/${id}`, "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/notifications")
   revalidatePath(`/dashboard/notifications/${id}`)
-  redirect(`/dashboard/notifications/${id}?success=${encodeMessage("系统通知已更新")}`)
+  redirect(withMessage(`/dashboard/notifications/${id}`, "success", "系统通知已更新"))
 }
 
 export async function deleteNotificationAction(formData: FormData) {
@@ -85,10 +85,10 @@ export async function deleteNotificationAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "删除通知失败"
-    redirect(`/dashboard/notifications/${id}?error=${encodeMessage(message)}`)
+    redirect(withMessage(`/dashboard/notifications/${id}`, "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/notifications")
-  redirect("/dashboard/notifications?success=系统通知已删除")
+  redirect(withMessage("/dashboard/notifications", "success", "系统通知已删除"))
 }

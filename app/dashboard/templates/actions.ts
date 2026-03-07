@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { requireAdminUser } from "@/lib/admin/auth"
-import { encodeMessage, parseProviderType, requiredString } from "@/lib/admin/forms"
+import { parseProviderType, requiredString, withMessage } from "@/lib/admin/forms"
 import { parseOptionalJson } from "@/lib/admin/json"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
@@ -30,12 +30,12 @@ export async function createTemplateAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "创建模板失败"
-    redirect(`/dashboard/templates/new?error=${encodeMessage(message)}`)
+    redirect(withMessage("/dashboard/templates/new", "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/templates")
-  redirect("/dashboard/templates?success=模板已创建")
+  redirect(withMessage("/dashboard/templates", "success", "模板已创建"))
 }
 
 export async function updateTemplateAction(formData: FormData) {
@@ -53,12 +53,12 @@ export async function updateTemplateAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "更新模板失败"
-    redirect(`/dashboard/templates/${id}?error=${encodeMessage(message)}`)
+    redirect(withMessage(`/dashboard/templates/${id}`, "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/templates")
-  redirect(`/dashboard/templates/${id}?success=${encodeMessage("模板已更新")}`)
+  redirect(withMessage(`/dashboard/templates/${id}`, "success", "模板已更新"))
 }
 
 export async function deleteTemplateAction(formData: FormData) {
@@ -75,10 +75,10 @@ export async function deleteTemplateAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "删除模板失败"
-    redirect(`/dashboard/templates/${id}?error=${encodeMessage(message)}`)
+    redirect(withMessage(`/dashboard/templates/${id}`, "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/templates")
-  redirect("/dashboard/templates?success=模板已删除")
+  redirect(withMessage("/dashboard/templates", "success", "模板已删除"))
 }

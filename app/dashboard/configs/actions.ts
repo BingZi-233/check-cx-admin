@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { requireAdminUser } from "@/lib/admin/auth"
-import { requiredString, optionalString, booleanFromForm, parseProviderType, encodeMessage } from "@/lib/admin/forms"
+import { requiredString, optionalString, booleanFromForm, parseProviderType, withMessage } from "@/lib/admin/forms"
 import { parseOptionalJson } from "@/lib/admin/json"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
@@ -61,12 +61,12 @@ export async function createConfigAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "创建配置失败"
-    redirect(`/dashboard/configs/new?error=${encodeMessage(message)}`)
+    redirect(withMessage("/dashboard/configs/new", "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/configs")
-  redirect("/dashboard/configs?success=配置已创建")
+  redirect(withMessage("/dashboard/configs", "success", "配置已创建"))
 }
 
 export async function updateConfigAction(formData: FormData) {
@@ -84,12 +84,12 @@ export async function updateConfigAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "更新配置失败"
-    redirect(`/dashboard/configs/${id}?error=${encodeMessage(message)}`)
+    redirect(withMessage(`/dashboard/configs/${id}`, "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/configs")
-  redirect(`/dashboard/configs/${id}?success=${encodeMessage("配置已更新")}`)
+  redirect(withMessage(`/dashboard/configs/${id}`, "success", "配置已更新"))
 }
 
 export async function deleteConfigAction(formData: FormData) {
@@ -106,10 +106,10 @@ export async function deleteConfigAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "删除配置失败"
-    redirect(`/dashboard/configs/${id}?error=${encodeMessage(message)}`)
+    redirect(withMessage(`/dashboard/configs/${id}`, "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/configs")
-  redirect("/dashboard/configs?success=配置已删除")
+  redirect(withMessage("/dashboard/configs", "success", "配置已删除"))
 }

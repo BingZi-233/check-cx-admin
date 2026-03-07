@@ -5,9 +5,9 @@ import { redirect } from "next/navigation"
 
 import { requireAdminUser } from "@/lib/admin/auth"
 import {
-  encodeMessage,
   optionalString,
   requiredString,
+  withMessage,
 } from "@/lib/admin/forms"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
@@ -31,12 +31,12 @@ export async function createGroupAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "创建分组失败"
-    redirect(`/dashboard/groups/new?error=${encodeMessage(message)}`)
+    redirect(withMessage("/dashboard/groups/new", "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/groups")
-  redirect("/dashboard/groups?success=分组已创建")
+  redirect(withMessage("/dashboard/groups", "success", "分组已创建"))
 }
 
 export async function updateGroupAction(formData: FormData) {
@@ -56,13 +56,13 @@ export async function updateGroupAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "更新分组失败"
-    redirect(`/dashboard/groups/${id}?error=${encodeMessage(message)}`)
+    redirect(withMessage(`/dashboard/groups/${id}`, "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/groups")
   revalidatePath(`/dashboard/groups/${id}`)
-  redirect(`/dashboard/groups/${id}?success=${encodeMessage("分组已更新")}`)
+  redirect(withMessage(`/dashboard/groups/${id}`, "success", "分组已更新"))
 }
 
 export async function deleteGroupAction(formData: FormData) {
@@ -79,10 +79,10 @@ export async function deleteGroupAction(formData: FormData) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "删除分组失败"
-    redirect(`/dashboard/groups/${id}?error=${encodeMessage(message)}`)
+    redirect(withMessage(`/dashboard/groups/${id}`, "error", message))
   }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/groups")
-  redirect("/dashboard/groups?success=分组已删除")
+  redirect(withMessage("/dashboard/groups", "success", "分组已删除"))
 }

@@ -52,6 +52,17 @@ export function encodeMessage(message: string) {
   return encodeURIComponent(message)
 }
 
+export function withMessage(
+  path: string,
+  key: "success" | "error",
+  message: string
+) {
+  const searchParams = new URLSearchParams()
+  searchParams.set(key, message)
+
+  return `${path}?${searchParams.toString()}`
+}
+
 export function toSearchParamMessage(error: unknown) {
   if (error instanceof Error) {
     return encodeURIComponent(error.message)

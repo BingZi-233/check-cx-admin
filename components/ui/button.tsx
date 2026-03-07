@@ -47,12 +47,19 @@ function Button({
   size = "default",
   asChild = false,
   children,
+  render,
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
   const mergedClassName = cn(buttonVariants({ variant, size, className }))
+  const resolvedNativeButton =
+    nativeButton ??
+    (render
+      ? React.isValidElement(render) && render.type === "button"
+      : true)
 
   if (asChild && React.isValidElement(children)) {
     const child = children as React.ReactElement<{ className?: string }>
@@ -67,6 +74,8 @@ function Button({
     <ButtonPrimitive
       data-slot="button"
       className={mergedClassName}
+      render={render}
+      nativeButton={resolvedNativeButton}
       {...props}
     >
       {children}
