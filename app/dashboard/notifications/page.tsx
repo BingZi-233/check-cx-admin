@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { toggleNotificationActiveAction } from "@/app/dashboard/notifications/actions"
 import { Notice } from "@/components/admin/notice"
 import { MarkdownPreview } from "@/components/admin/markdown-preview"
 import { PageHeader } from "@/components/admin/page-header"
@@ -70,6 +71,25 @@ export default async function NotificationsPage({
                   <span className="text-xs text-muted-foreground">
                     {formatDateTime(notification.created_at)}
                   </span>
+                  <form action={toggleNotificationActiveAction}>
+                    <input type="hidden" name="id" value={notification.id} />
+                    <input
+                      type="hidden"
+                      name="is_active"
+                      value={notification.is_active ? "" : "on"}
+                    />
+                    <input
+                      type="hidden"
+                      name="return_to"
+                      value="/dashboard/notifications"
+                    />
+                    <Button
+                      type="submit"
+                      variant={notification.is_active ? "outline" : "default"}
+                    >
+                      {notification.is_active ? "隐藏" : "显示"}
+                    </Button>
+                  </form>
                   <Button
                     variant="outline"
                     render={<Link href={`/dashboard/notifications/${notification.id}`} />}

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { requireAdminUser } from "@/lib/admin/auth"
 import {
   booleanFromForm,
+  optionalString,
   parseNotificationLevel,
   requiredString,
   withMessage,
@@ -66,6 +67,44 @@ export async function updateNotificationAction(formData: FormData) {
   revalidatePath("/dashboard/notifications")
   revalidatePath(`/dashboard/notifications/${id}`)
   redirect(withMessage(`/dashboard/notifications/${id}`, "success", "系统通知已更新"))
+}
+
+export async function toggleNotificationActiveAction(formData: FormData) {
+  await requireAdminUser()
+
+  const id = requiredString(formData, "id", "通知 ID")
+  const isActive = booleanFromForm(formData, "is_active")
+  const returnTo = optionalString(formData, "return_to")
+
+  try {
+    const client = createAdminClient()
+    const { error } = await client
+      .from("system_notifications")
+      .update({ is_active: isActive })
+      .eq("id", id)
+
+    if (error) {
+      throw error
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "切换通知状态失败"
+    const fallbackPath = returnTo?.startsWith("/dashboard/notifications")
+      ? returnTo
+      : "/dashboard/notifications"
+
+    redirect(withMessage(fallbackPath, "error", message))
+  }
+
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/notifications")
+  revalidatePath(`/dashboard/notifications/${id}`)
+
+  const fallbackPath = returnTo?.startsWith("/dashboard/notifications")
+    ? returnTo
+    : "/dashboard/notifications"
+  const message = isActive ? "系统通知已显示" : "系统通知已隐藏"
+
+  redirect(withMessage(fallbackPath, "success", message))
 }
 
 export async function deleteNotificationAction(formData: FormData) {
