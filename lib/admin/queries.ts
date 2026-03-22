@@ -4,6 +4,7 @@ import {
   AvailabilityStatRecord,
   CheckConfigRecord,
   CheckHistoryRecord,
+  CheckModelRecord,
   CheckRequestTemplateRecord,
   DashboardSummary,
   GroupInfoRecord,
@@ -44,6 +45,7 @@ async function countRows(
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   const [
+    modelCount,
     configCount,
     enabledConfigCount,
     maintenanceConfigCount,
@@ -52,6 +54,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     activeNotificationCount,
     recentErrorCount,
   ] = await Promise.all([
+    countRows("check_models"),
     countRows("check_configs"),
     countRows("check_configs", (query) => query.eq("enabled", true)),
     countRows("check_configs", (query) => query.eq("is_maintenance", true)),
@@ -64,6 +67,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   ])
 
   return {
+    modelCount,
     configCount,
     enabledConfigCount,
     maintenanceConfigCount,
@@ -78,21 +82,34 @@ export async function listConfigs() {
   const client = createAdminClient()
   const { data, error } = await client
     .from("check_configs")
-    .select("*")
+    .select(
+      "id, name, type, model_id, endpoint, api_key, enabled, is_maintenance, template_id, request_header, group_name, metadata, created_at, updated_at, check_models(model)"
+    )
     .order("updated_at", { ascending: false })
 
   if (error) {
     throw error
   }
 
-  return (data ?? []) as CheckConfigRecord[]
+  return ((data ?? []) as Array<
+    Omit<CheckConfigRecord, "model"> & {
+      check_models?: { model: string } | Array<{ model: string }> | null
+    }
+  >).map((item) => ({
+    ...item,
+    model: Array.isArray(item.check_models)
+      ? (item.check_models[0]?.model ?? "")
+      : (item.check_models?.model ?? ""),
+  }))
 }
 
 export async function getConfigById(id: string) {
   const client = createAdminClient()
   const { data, error } = await client
     .from("check_configs")
-    .select("*")
+    .select(
+      "id, name, type, model_id, endpoint, api_key, enabled, is_maintenance, template_id, request_header, group_name, metadata, created_at, updated_at, check_models(model)"
+    )
     .eq("id", id)
     .maybeSingle()
 
@@ -100,7 +117,94 @@ export async function getConfigById(id: string) {
     throw error
   }
 
-  return data as CheckConfigRecord | null
+  if (!data) {
+    return null
+  }
+
+  const typed = data as Omit<CheckConfigRecord, "model"> & {
+    check_models?: { model: string } | Array<{ model: string }> | null
+  }
+
+  return {
+    ...typed,
+    model: Array.isArray(typed.check_models)
+      ? (typed.check_models[0]?.model ?? "")
+      : (typed.check_models?.model ?? ""),
+  } as CheckConfigRecord
+}
+
+export async function listModels() {
+  const client = createAdminClient()
+  const [{ data, error }, configs] = await Promise.all([
+    client
+      .from("check_models")
+      .select("*")
+      .order("updated_at", { ascending: false }),
+    client.from("check_configs").select("model_id"),
+  ])
+
+  if (error) {
+    throw error
+  }
+
+  if (configs.error) {
+    throw configs.error
+  }
+
+  const countMap = new Map<string, number>()
+  for (const item of configs.data ?? []) {
+    const current = countMap.get(item.model_id) ?? 0
+    countMap.set(item.model_id, current + 1)
+  }
+
+  return ((data ?? []) as CheckModelRecord[]).map((item) => ({
+    ...item,
+    config_count: countMap.get(item.id) ?? 0,
+  }))
+}
+
+export async function listModelsByType(type: CheckModelRecord["type"]) {
+  const client = createAdminClient()
+  const { data, error } = await client
+    .from("check_models")
+    .select("*")
+    .eq("type", type)
+    .order("model", { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as CheckModelRecord[]
+}
+
+export async function getModelById(id: string) {
+  const client = createAdminClient()
+  const [{ data, error }, configs] = await Promise.all([
+    client
+      .from("check_models")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle(),
+    client.from("check_configs").select("id", { count: "exact", head: true }).eq("model_id", id),
+  ])
+
+  if (error) {
+    throw error
+  }
+
+  if (configs.error) {
+    throw configs.error
+  }
+
+  if (!data) {
+    return null
+  }
+
+  return {
+    ...(data as CheckModelRecord),
+    config_count: configs.count ?? 0,
+  } satisfies CheckModelRecord
 }
 
 export async function listTemplates() {
@@ -195,7 +299,7 @@ export async function listRecentHistory(limit = 120) {
   const { data, error } = await client
     .from("check_history")
     .select(
-      "id, config_id, status, latency_ms, ping_latency_ms, checked_at, message, created_at, check_configs(id, name, type, model, group_name)"
+      "id, config_id, status, latency_ms, ping_latency_ms, checked_at, message, created_at, check_configs(id, name, type, model_id, group_name, check_models(model))"
     )
     .order("checked_at", { ascending: false })
     .limit(limit)
@@ -207,15 +311,38 @@ export async function listRecentHistory(limit = 120) {
   return ((data ?? []) as Array<
     Omit<CheckHistoryRecord, "check_configs"> & {
       check_configs?:
-        | Array<Pick<CheckConfigRecord, "id" | "name" | "type" | "model" | "group_name">>
-        | Pick<CheckConfigRecord, "id" | "name" | "type" | "model" | "group_name">
+        | Array<
+            Pick<CheckConfigRecord, "id" | "name" | "type" | "model_id" | "group_name"> & {
+              check_models?: { model: string } | Array<{ model: string }> | null
+            }
+          >
+        | (Pick<CheckConfigRecord, "id" | "name" | "type" | "model_id" | "group_name"> & {
+            check_models?: { model: string } | Array<{ model: string }> | null
+          })
         | null
     }
   >).map((item) => ({
     ...item,
-    check_configs: Array.isArray(item.check_configs)
-      ? (item.check_configs[0] ?? null)
-      : (item.check_configs ?? null),
+    check_configs: (() => {
+      const config = Array.isArray(item.check_configs)
+        ? (item.check_configs[0] ?? null)
+        : (item.check_configs ?? null)
+
+      if (!config) {
+        return null
+      }
+
+      return {
+        id: config.id,
+        name: config.name,
+        type: config.type,
+        model_id: config.model_id,
+        model: Array.isArray(config.check_models)
+          ? (config.check_models[0]?.model ?? "")
+          : (config.check_models?.model ?? ""),
+        group_name: config.group_name,
+      }
+    })(),
   }))
 }
 

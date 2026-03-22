@@ -2,6 +2,7 @@
 
 `check-cx-admin` 是 `BingZi-233/check-cx` 的后台管理项目，用来管理以下核心对象：
 
+- `check_models`：模型配置
 - `check_configs`：Provider 配置
 - `check_request_templates`：请求模板
 - `group_info`：分组信息
@@ -186,6 +187,7 @@ git push origin v0.1.0
 
 - `/login`：登录页
 - `/dashboard`：概览
+- `/dashboard/models`：模型配置
 - `/dashboard/configs`：Provider 配置
 - `/dashboard/templates`：请求模板
 - `/dashboard/groups`：分组信息

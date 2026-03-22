@@ -73,7 +73,26 @@ function getSelectedConfigIds(formData: FormData) {
 async function parseConfigPayload(formData: FormData) {
   const client = createAdminClient()
   const type = parseProviderType(requiredString(formData, "type", "Provider 类型"))
+  const modelId = requiredString(formData, "model_id", "模型")
   const templateId = optionalString(formData, "template_id")
+
+  const { data: model, error: modelError } = await client
+    .from("check_models")
+    .select("id, type")
+    .eq("id", modelId)
+    .maybeSingle()
+
+  if (modelError) {
+    throw modelError
+  }
+
+  if (!model) {
+    throw new Error("所选模型不存在")
+  }
+
+  if (model.type !== type) {
+    throw new Error("模型类型和配置类型不一致")
+  }
 
   if (templateId) {
     const { data: template, error } = await client
@@ -98,7 +117,7 @@ async function parseConfigPayload(formData: FormData) {
   return {
     name: requiredString(formData, "name", "显示名称"),
     type,
-    model: requiredString(formData, "model", "模型名称"),
+    model_id: modelId,
     endpoint: requiredString(formData, "endpoint", "API 端点"),
     api_key: requiredString(formData, "api_key", "API Key"),
     enabled: booleanFromForm(formData, "enabled"),

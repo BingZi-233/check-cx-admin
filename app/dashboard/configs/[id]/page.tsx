@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { deleteConfigAction, updateConfigAction } from "@/app/dashboard/configs/actions"
+import { ConfigModelFields } from "@/components/admin/config-model-fields"
 import { Notice } from "@/components/admin/notice"
 import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { formatDateTime } from "@/lib/admin/format"
 import { stringifyJson } from "@/lib/admin/json"
-import { getConfigById, listTemplates } from "@/lib/admin/queries"
+import { getConfigById, listModels, listTemplates } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 function getParam(value: string | string[] | undefined) {
@@ -40,7 +41,7 @@ export default async function EditConfigPage({
     return <PageHeader title="编辑配置" description="缺少 service role，这页不会工作。" />
   }
 
-  const [config, templates] = await Promise.all([getConfigById(id), listTemplates()])
+  const [config, templates, models] = await Promise.all([getConfigById(id), listTemplates(), listModels()])
 
   if (!config) {
     notFound()
@@ -73,23 +74,11 @@ export default async function EditConfigPage({
               <Label htmlFor="name">名称</Label>
               <Input id="name" name="name" defaultValue={config.name} required />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="type">Provider 类型</Label>
-              <select
-                id="type"
-                name="type"
-                className="flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
-                defaultValue={config.type}
-              >
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
-                <option value="anthropic">Anthropic</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="model">模型</Label>
-              <Input id="model" name="model" defaultValue={config.model} required />
-            </div>
+            <ConfigModelFields
+              initialType={config.type}
+              initialModelId={config.model_id}
+              models={models}
+            />
             <div className="space-y-2">
               <Label htmlFor="group_name">分组名</Label>
               <Input id="group_name" name="group_name" defaultValue={config.group_name ?? ""} />

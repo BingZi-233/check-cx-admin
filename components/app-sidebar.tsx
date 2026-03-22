@@ -8,6 +8,7 @@ import {
   GaugeIcon,
   HistoryIcon,
   LayoutTemplateIcon,
+  Layers3Icon,
   ServerCogIcon,
   TerminalIcon,
   WaypointsIcon,
@@ -30,6 +31,7 @@ import {
 const mainItems = [
   { title: "概览", url: "/dashboard", icon: GaugeIcon },
   { title: "Provider 配置", url: "/dashboard/configs", icon: ServerCogIcon },
+  { title: "模型配置", url: "/dashboard/models", icon: Layers3Icon },
   { title: "请求模板", url: "/dashboard/templates", icon: LayoutTemplateIcon },
   { title: "分组信息", url: "/dashboard/groups", icon: FolderTreeIcon },
   { title: "系统通知", url: "/dashboard/notifications", icon: BellIcon },

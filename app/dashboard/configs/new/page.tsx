@@ -1,16 +1,15 @@
 import Link from "next/link"
 
 import { Notice } from "@/components/admin/notice"
+import { ConfigModelFields } from "@/components/admin/config-model-fields"
 import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { getConfigById, listGroups, listTemplates } from "@/lib/admin/queries"
+import { getConfigById, listGroups, listModels, listTemplates } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 import { createConfigAction } from "@/app/dashboard/configs/actions"
-
-const selectClassName = "flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
 
 function getParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
@@ -29,9 +28,10 @@ export default async function NewConfigPage({
     return <PageHeader title="新建配置" description="先配 service role，不然新增只是幻觉。" />
   }
 
-  const [templates, groups, sourceConfig] = await Promise.all([
+  const [templates, groups, models, sourceConfig] = await Promise.all([
     listTemplates(),
     listGroups(),
+    listModels(),
     sourceId ? getConfigById(sourceId) : Promise.resolve(null),
   ])
 
@@ -68,21 +68,14 @@ export default async function NewConfigPage({
               <span className="text-sm font-medium">显示名称</span>
               <Input name="name" defaultValue={sourceConfig ? `${sourceConfig.name} - 副本` : ""} required />
             </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium">Provider 类型</span>
-              <select name="type" defaultValue={sourceConfig?.type ?? "openai"} className={selectClassName}>
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
-                <option value="anthropic">Anthropic</option>
-              </select>
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium">模型名称</span>
-              <Input name="model" placeholder="gpt-4o-mini" defaultValue={sourceConfig?.model ?? ""} required />
-            </label>
+            <ConfigModelFields
+              initialType={sourceConfig?.type ?? "openai"}
+              initialModelId={sourceConfig?.model_id ?? ""}
+              models={models}
+            />
             <label className="space-y-2">
               <span className="text-sm font-medium">分组名称</span>
-              <select name="group_name" defaultValue={sourceGroupName} className={selectClassName}>
+              <select name="group_name" defaultValue={sourceGroupName} className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30">
                 <option value="">不设置分组</option>
                 {!hasSourceGroup && sourceGroupName ? (
                   <option value={sourceGroupName}>{sourceGroupName}（当前未在分组表中）</option>
@@ -102,7 +95,7 @@ export default async function NewConfigPage({
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">请求模板</span>
-              <select name="template_id" defaultValue={sourceConfig?.template_id ?? ""} className={selectClassName}>
+              <select name="template_id" defaultValue={sourceConfig?.template_id ?? ""} className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30">
                 <option value="">不使用模板</option>
                 {templates.map((item) => (
                   <option key={item.id} value={item.id}>{item.name} · {item.type}</option>

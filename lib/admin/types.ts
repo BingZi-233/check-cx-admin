@@ -33,10 +33,22 @@ export interface CheckRequestTemplateRecord {
   updated_at: string | null
 }
 
+export interface CheckModelRecord {
+  id: string
+  type: ProviderType
+  model: string
+  request_header: JsonValue | null
+  metadata: JsonValue | null
+  created_at: string | null
+  updated_at: string | null
+  config_count?: number
+}
+
 export interface CheckConfigRecord {
   id: string
   name: string
   type: ProviderType
+  model_id: string
   model: string
   endpoint: string
   api_key: string
@@ -76,7 +88,7 @@ export interface CheckHistoryRecord {
   checked_at: string
   message: string | null
   created_at: string | null
-  check_configs?: Pick<CheckConfigRecord, "id" | "name" | "type" | "model" | "group_name"> | null
+  check_configs?: Pick<CheckConfigRecord, "id" | "name" | "type" | "model_id" | "model" | "group_name"> | null
 }
 
 export interface AvailabilityStatRecord {
@@ -95,6 +107,7 @@ export interface PollerLeaseRecord {
 }
 
 export interface DashboardSummary {
+  modelCount: number
   configCount: number
   enabledConfigCount: number
   maintenanceConfigCount: number
