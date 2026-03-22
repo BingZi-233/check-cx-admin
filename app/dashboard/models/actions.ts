@@ -7,6 +7,24 @@ import { requireAdminUser } from "@/lib/admin/auth"
 import { optionalString, parseProviderType, requiredString, withMessage } from "@/lib/admin/forms"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
+function getActionErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.trim().length > 0
+  ) {
+    return error.message
+  }
+
+  return fallback
+}
+
 async function parseModelPayload(formData: FormData) {
   const client = createAdminClient()
   const type = parseProviderType(requiredString(formData, "type", "Provider 类型"))
@@ -51,7 +69,7 @@ export async function createModelAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "创建模型失败"
+    const message = getActionErrorMessage(error, "创建模型失败")
     redirect(withMessage("/dashboard/models/new", "error", message))
   }
 
@@ -76,7 +94,7 @@ export async function updateModelAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "更新模型失败"
+    const message = getActionErrorMessage(error, "更新模型失败")
     redirect(withMessage(`/dashboard/models/${id}`, "error", message))
   }
 
@@ -113,7 +131,7 @@ export async function deleteModelAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "删除模型失败"
+    const message = getActionErrorMessage(error, "删除模型失败")
     redirect(withMessage(`/dashboard/models/${id}`, "error", message))
   }
 
@@ -122,4 +140,57 @@ export async function deleteModelAction(formData: FormData) {
   revalidatePath("/dashboard/configs")
   revalidatePath("/dashboard/templates")
   redirect(withMessage("/dashboard/models", "success", "模型已删除"))
+}
+
+export async function cleanupUnusedModelsAction() {
+  await requireAdminUser()
+
+  let successMessage = ""
+
+  try {
+    const client = createAdminClient()
+    const [{ data: models, error: modelsError }, usedConfigs] = await Promise.all([
+      client.from("check_models").select("id"),
+      client.from("check_configs").select("model_id"),
+    ])
+
+    if (modelsError) {
+      throw modelsError
+    }
+
+    if (usedConfigs.error) {
+      throw usedConfigs.error
+    }
+
+    const usedModelIds = new Set(
+      (usedConfigs.data ?? [])
+        .map((item) => item.model_id)
+        .filter(Boolean)
+    )
+
+    const unusedModelIds = (models ?? [])
+      .map((item) => item.id)
+      .filter((id) => !usedModelIds.has(id))
+
+    if (unusedModelIds.length === 0) {
+      successMessage = "没有可清理的未引用模型"
+    } else {
+      const { error } = await client.from("check_models").delete().in("id", unusedModelIds)
+
+      if (error) {
+        throw error
+      }
+
+      successMessage = `已清理 ${unusedModelIds.length} 条未引用模型`
+    }
+  } catch (error) {
+    const message = getActionErrorMessage(error, "清理未引用模型失败")
+    redirect(withMessage("/dashboard/models", "error", message))
+  }
+
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/models")
+  revalidatePath("/dashboard/configs")
+  revalidatePath("/dashboard/templates")
+  redirect(withMessage("/dashboard/models", "success", successMessage))
 }

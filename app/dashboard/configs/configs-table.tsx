@@ -2,16 +2,25 @@
 
 import Link from "next/link"
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react"
-import { CopyIcon } from "lucide-react"
+import { CopyIcon, ShuffleIcon } from "lucide-react"
 
 import { batchConfigAction } from "@/app/dashboard/configs/actions"
 import { BooleanBadge, ProviderBadge } from "@/components/admin/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { formatDate, formatDateTime, maskSecret } from "@/lib/admin/format"
-import type { CheckConfigRecord } from "@/lib/admin/types"
+import type { CheckConfigRecord, CheckModelRecord, ProviderType } from "@/lib/admin/types"
 
 type ConfigsTableProps = {
   configs: CheckConfigRecord[]
+  models: CheckModelRecord[]
   returnPath: string
 }
 
@@ -20,8 +29,23 @@ function formatTemplateLabel(value: string) {
   return chars.length > 10 ? `${chars.slice(0, 10).join("")}...` : value
 }
 
-export function ConfigsTable({ configs, returnPath }: ConfigsTableProps) {
+function getSingleProviderType(configs: CheckConfigRecord[], selectedIds: string[]): ProviderType | null {
+  const selectedTypes = Array.from(
+    new Set(
+      configs
+        .filter((item) => selectedIds.includes(item.id))
+        .map((item) => item.type)
+    )
+  )
+
+  return selectedTypes.length === 1 ? selectedTypes[0] : null
+}
+
+export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps) {
+  const formId = "batch-config-form"
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isReplaceModelOpen, setIsReplaceModelOpen] = useState(false)
+  const [targetModelId, setTargetModelId] = useState("")
   const selectAllRef = useRef<HTMLInputElement>(null)
   const configIds = useMemo(() => configs.map((item) => item.id), [configs])
   const configIdSet = useMemo(() => new Set(configIds), [configIds])
@@ -43,6 +67,26 @@ export function ConfigsTable({ configs, returnPath }: ConfigsTableProps) {
 
   const allSelected = configs.length > 0 && visibleSelectedIds.length === configs.length
   const hasSelection = visibleSelectedIds.length > 0
+  const selectedProviderType = useMemo(
+    () => getSingleProviderType(configs, visibleSelectedIds),
+    [configs, visibleSelectedIds]
+  )
+  const filteredModels = useMemo(
+    () => (selectedProviderType ? models.filter((item) => item.type === selectedProviderType) : []),
+    [models, selectedProviderType]
+  )
+  const hasMixedTypes = hasSelection && !selectedProviderType
+  const resolvedTargetModelId = useMemo(() => {
+    if (!selectedProviderType) {
+      return ""
+    }
+
+    if (targetModelId && filteredModels.some((item) => item.id === targetModelId)) {
+      return targetModelId
+    }
+
+    return filteredModels[0]?.id ?? ""
+  }, [filteredModels, selectedProviderType, targetModelId])
 
   function toggleConfig(id: string, checked: boolean) {
     setSelectedIds((current) => {
@@ -66,6 +110,11 @@ export function ConfigsTable({ configs, returnPath }: ConfigsTableProps) {
       return
     }
 
+    if (submitter.value === "replace_model" && !resolvedTargetModelId) {
+      event.preventDefault()
+      return
+    }
+
     if (submitter.value === "delete") {
       const confirmed = window.confirm(`确定删除选中的 ${visibleSelectedIds.length} 条配置吗？相关检测历史会一起被级联删除。`)
 
@@ -76,7 +125,7 @@ export function ConfigsTable({ configs, returnPath }: ConfigsTableProps) {
   }
 
   return (
-    <form action={batchConfigAction} onSubmit={handleSubmit} className="space-y-4">
+    <form id={formId} action={batchConfigAction} onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="return_to" value={returnPath} />
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3">
         <div className="text-sm text-muted-foreground">
@@ -108,6 +157,18 @@ export function ConfigsTable({ configs, returnPath }: ConfigsTableProps) {
             disabled={!hasSelection}
           >
             取消维护
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!hasSelection}
+            onClick={() => {
+              setTargetModelId(resolvedTargetModelId)
+              setIsReplaceModelOpen(true)
+            }}
+          >
+            <ShuffleIcon />
+            批量换模型
           </Button>
           <Button
             type="submit"
@@ -230,6 +291,82 @@ export function ConfigsTable({ configs, returnPath }: ConfigsTableProps) {
           </tbody>
         </table>
       </div>
+      <Sheet open={isReplaceModelOpen && hasSelection} onOpenChange={setIsReplaceModelOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>批量更换引用模型</SheetTitle>
+            <SheetDescription>
+              {hasSelection
+                ? `当前选中 ${visibleSelectedIds.length} 条配置。只允许同一 Provider 类型一起替换。`
+                : "先在列表里勾选配置，再批量更换模型。"}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 space-y-4 px-6">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+              <div>已选配置：{visibleSelectedIds.length}</div>
+              <div>
+                Provider：
+                {selectedProviderType ? (
+                  <span className="font-medium text-foreground">{selectedProviderType}</span>
+                ) : hasSelection ? (
+                  <span className="font-medium text-destructive">包含多个类型，不能批量替换</span>
+                ) : (
+                  <span>未选择</span>
+                )}
+              </div>
+            </div>
+            <label className="space-y-2">
+              <span className="text-sm font-medium">目标模型</span>
+              <select
+                name="target_model_id"
+                form={formId}
+                value={resolvedTargetModelId}
+                onChange={(event) => setTargetModelId(event.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                disabled={!selectedProviderType || filteredModels.length === 0}
+                required
+              >
+                {filteredModels.length === 0 ? (
+                  <option value="">
+                    {selectedProviderType ? "当前类型下没有可选模型" : "请先选择同类型配置"}
+                  </option>
+                ) : null}
+                {filteredModels.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.model}
+                    {item.template_name ? ` · ${item.template_name}` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {hasMixedTypes ? (
+              <p className="text-sm text-destructive">
+                当前选中的配置包含多个 Provider 类型。请先筛选或分批选择后再更换模型。
+              </p>
+            ) : null}
+          </div>
+          <SheetFooter>
+            {visibleSelectedIds.map((id) => (
+              <input key={id} type="hidden" name="ids" value={id} form={formId} />
+            ))}
+            {selectedProviderType ? (
+              <input type="hidden" name="selected_types" value={selectedProviderType} form={formId} />
+            ) : null}
+            <Button
+              type="submit"
+              name="operation"
+              value="replace_model"
+              form={formId}
+              disabled={!hasSelection || hasMixedTypes || !resolvedTargetModelId}
+            >
+              确认替换
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsReplaceModelOpen(false)}>
+              取消
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </form>
   )
 }

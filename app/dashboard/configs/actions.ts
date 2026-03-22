@@ -6,8 +6,15 @@ import { redirect } from "next/navigation"
 import { requireAdminUser } from "@/lib/admin/auth"
 import { requiredString, optionalString, booleanFromForm, parseProviderType, withMessage } from "@/lib/admin/forms"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
+import type { ProviderType } from "@/lib/admin/types"
 
-type BatchConfigOperation = "enable" | "disable" | "maintenance_on" | "maintenance_off" | "delete"
+type BatchConfigOperation =
+  | "enable"
+  | "disable"
+  | "maintenance_on"
+  | "maintenance_off"
+  | "replace_model"
+  | "delete"
 
 function withSourceMessage(message: string, sourceId: string | null) {
   const url = new URL(withMessage("/dashboard/configs/new", "error", message), "http://localhost")
@@ -48,6 +55,7 @@ function parseBatchConfigOperation(value: FormDataEntryValue | null): BatchConfi
     operation === "disable" ||
     operation === "maintenance_on" ||
     operation === "maintenance_off" ||
+    operation === "replace_model" ||
     operation === "delete"
   ) {
     return operation
@@ -67,6 +75,17 @@ function getSelectedConfigIds(formData: FormData) {
   }
 
   return Array.from(new Set(ids))
+}
+
+function parseProviderTypeSet(values: Array<string | null | undefined>) {
+  return Array.from(
+    new Set(
+      values
+        .map((item) => item?.trim() ?? "")
+        .filter(Boolean)
+        .map((item) => parseProviderType(item))
+    )
+  ) as ProviderType[]
 }
 
 async function parseConfigPayload(formData: FormData) {
@@ -228,6 +247,70 @@ export async function batchConfigAction(formData: FormData) {
         }
 
         successMessage = `已取消 ${ids.length} 条配置的维护模式`
+        break
+      }
+      case "replace_model": {
+        const targetModelId = requiredString(formData, "target_model_id", "目标模型")
+        const selectedTypes = parseProviderTypeSet(formData.getAll("selected_types").map((item) => item.toString()))
+
+        if (selectedTypes.length !== 1) {
+          throw new Error("选中的配置包含多个 Provider 类型，请先按类型筛选后再批量换模型")
+        }
+
+        const selectedType = selectedTypes[0]
+
+        const [{ data: targetModel, error: targetModelError }, selectedConfigs] = await Promise.all([
+          client
+            .from("check_models")
+            .select("id, type, model")
+            .eq("id", targetModelId)
+            .maybeSingle(),
+          client
+            .from("check_configs")
+            .select("id, type")
+            .in("id", ids),
+        ])
+
+        if (targetModelError) {
+          throw targetModelError
+        }
+
+        if (!targetModel) {
+          throw new Error("目标模型不存在")
+        }
+
+        if (selectedConfigs.error) {
+          throw selectedConfigs.error
+        }
+
+        const existingIds = new Set((selectedConfigs.data ?? []).map((item) => item.id))
+        if (existingIds.size !== ids.length) {
+          throw new Error("部分选中的配置不存在或已被删除，请刷新列表后重试")
+        }
+
+        const actualTypes = parseProviderTypeSet((selectedConfigs.data ?? []).map((item) => item.type))
+        if (actualTypes.length !== 1) {
+          throw new Error("选中的配置包含多个 Provider 类型，请先按类型筛选后再批量换模型")
+        }
+
+        if (actualTypes[0] !== selectedType) {
+          throw new Error("提交的配置类型与数据库实际数据不一致，请刷新页面后重试")
+        }
+
+        if (targetModel.type !== selectedType) {
+          throw new Error("目标模型类型和选中配置类型不一致")
+        }
+
+        const { error } = await client
+          .from("check_configs")
+          .update({ model_id: targetModelId })
+          .in("id", ids)
+
+        if (error) {
+          throw error
+        }
+
+        successMessage = `已将 ${ids.length} 条配置切换到模型「${targetModel.model}」`
         break
       }
       case "delete": {

@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { listConfigs, listTemplates } from "@/lib/admin/queries"
+import { listConfigs, listModels, listTemplates } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 import { ConfigsTable } from "./configs-table"
@@ -46,7 +46,7 @@ export default async function ConfigsPage({
     )
   }
 
-  const [configs, templates] = await Promise.all([listConfigs(), listTemplates()])
+  const [configs, templates, models] = await Promise.all([listConfigs(), listTemplates(), listModels()])
   const groupNames = Array.from(
     new Set(
       configs
@@ -223,6 +223,7 @@ export default async function ConfigsPage({
           </form>
           <ConfigsTable
             configs={filteredConfigs}
+            models={models}
             returnPath={returnPath}
           />
         </CardContent>
