@@ -17,7 +17,7 @@ import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 import { ConfigsTable } from "./configs-table"
 
-const selectClassName = "flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+const selectClassName = "flex h-7 w-full rounded-md border border-input bg-input/20 px-2 py-0.5 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 md:text-xs/relaxed dark:bg-input/30"
 
 function getParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
