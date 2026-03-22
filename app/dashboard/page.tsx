@@ -23,12 +23,12 @@ import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 const quickLinks = [
   {
     title: "Provider 配置",
-    description: "管理检测实例、端点、模板、分组和密钥。",
+    description: "管理检测实例、端点、分组和密钥。",
     href: "/dashboard/configs",
   },
   {
     title: "模型配置",
-    description: "统一维护模型名和模型级默认参数，别在实例里重复改。",
+    description: "统一维护模型名和模板绑定，别在实例里重复改。",
     href: "/dashboard/models",
   },
   {
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-2xl">{summary.modelCount}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            同一模型的默认参数统一在这里收口。
+            同一模型的模板绑定统一在这里收口。
           </CardContent>
         </Card>
         <Card>

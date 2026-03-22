@@ -31,14 +31,15 @@ export interface CheckRequestTemplateRecord {
   metadata: JsonValue | null
   created_at: string | null
   updated_at: string | null
+  model_count?: number
 }
 
 export interface CheckModelRecord {
   id: string
   type: ProviderType
   model: string
-  request_header: JsonValue | null
-  metadata: JsonValue | null
+  template_id: string | null
+  template_name?: string | null
   created_at: string | null
   updated_at: string | null
   config_count?: number
@@ -50,14 +51,13 @@ export interface CheckConfigRecord {
   type: ProviderType
   model_id: string
   model: string
+  template_id: string | null
+  template_name?: string | null
   endpoint: string
   api_key: string
   enabled: boolean | null
   is_maintenance: boolean | null
-  template_id: string | null
-  request_header: JsonValue | null
   group_name: string | null
-  metadata: JsonValue | null
   created_at: string | null
   updated_at: string | null
 }

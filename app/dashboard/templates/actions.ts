@@ -35,6 +35,7 @@ export async function createTemplateAction(formData: FormData) {
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/templates")
+  revalidatePath("/dashboard/models")
   redirect(withMessage("/dashboard/templates", "success", "模板已创建"))
 }
 
@@ -58,6 +59,7 @@ export async function updateTemplateAction(formData: FormData) {
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/templates")
+  revalidatePath("/dashboard/models")
   redirect(withMessage(`/dashboard/templates/${id}`, "success", "模板已更新"))
 }
 
@@ -68,6 +70,19 @@ export async function deleteTemplateAction(formData: FormData) {
 
   try {
     const client = createAdminClient()
+    const { count, error: countError } = await client
+      .from("check_models")
+      .select("id", { count: "exact", head: true })
+      .eq("template_id", id)
+
+    if (countError) {
+      throw countError
+    }
+
+    if ((count ?? 0) > 0) {
+      throw new Error("该模板仍被模型引用，不能删除")
+    }
+
     const { error } = await client.from("check_request_templates").delete().eq("id", id)
 
     if (error) {
@@ -80,5 +95,6 @@ export async function deleteTemplateAction(formData: FormData) {
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/templates")
+  revalidatePath("/dashboard/models")
   redirect(withMessage("/dashboard/templates", "success", "模板已删除"))
 }

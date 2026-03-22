@@ -63,7 +63,7 @@ export default async function EditTemplatePage({
         <CardHeader>
           <CardTitle>模板内容</CardTitle>
           <CardDescription>
-            删除模板前先确认没有配置仍然依赖它，别把实例一起拖进坑里。
+            当前有 {template.model_count ?? 0} 个模型引用这个模板。被引用时不能删除。
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,7 +115,7 @@ export default async function EditTemplatePage({
           </form>
           <form action={deleteTemplateAction} className="mt-6 border-t pt-6">
             <input type="hidden" name="id" value={template.id} />
-            <Button type="submit" variant="destructive">
+            <Button type="submit" variant="destructive" disabled={(template.model_count ?? 0) > 0}>
               删除模板
             </Button>
           </form>

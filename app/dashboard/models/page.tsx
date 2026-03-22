@@ -33,7 +33,7 @@ export default async function ModelsPage({
     <div className="space-y-6">
       <PageHeader
         title="模型配置"
-        description="统一维护模型定义和模型级默认参数，别把同一模型改十遍。"
+        description="统一维护模型定义和模板绑定，别把同一模型改十遍。"
         actions={<Button render={<Link href="/dashboard/models/new" />}><PlusIcon />新建模型</Button>}
       />
       {success ? <Notice variant="success" title="操作成功" description={success} /> : null}
@@ -49,8 +49,7 @@ export default async function ModelsPage({
               <tr className="border-b">
                 <th className="py-3 pr-4">模型</th>
                 <th className="py-3 pr-4">Provider</th>
-                <th className="py-3 pr-4">请求头</th>
-                <th className="py-3 pr-4">metadata</th>
+                <th className="py-3 pr-4">模板</th>
                 <th className="py-3 pr-4">引用配置</th>
                 <th className="py-3">更新时间</th>
               </tr>
@@ -64,11 +63,8 @@ export default async function ModelsPage({
                     </Link>
                   </td>
                   <td className="py-3 pr-4"><ProviderBadge type={item.type} /></td>
-                  <td className="max-w-sm py-3 pr-4 truncate font-mono text-xs">
-                    {item.request_header ? JSON.stringify(item.request_header) : "-"}
-                  </td>
-                  <td className="max-w-sm py-3 pr-4 truncate font-mono text-xs">
-                    {item.metadata ? JSON.stringify(item.metadata) : "-"}
+                  <td className="max-w-sm py-3 pr-4 truncate text-xs">
+                    {item.template_name ?? "-"}
                   </td>
                   <td className="py-3 pr-4">{item.config_count ?? 0}</td>
                   <td className="py-3">{formatDateTime(item.updated_at)}</td>
@@ -81,4 +77,3 @@ export default async function ModelsPage({
     </div>
   )
 }
-

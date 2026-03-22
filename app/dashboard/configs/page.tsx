@@ -47,7 +47,6 @@ export default async function ConfigsPage({
   }
 
   const [configs, templates] = await Promise.all([listConfigs(), listTemplates()])
-  const templateMap = new Map(templates.map((item) => [item.id, item.name]))
   const groupNames = Array.from(
     new Set(
       configs
@@ -58,7 +57,7 @@ export default async function ConfigsPage({
 
   const normalizedKeyword = keyword.toLowerCase()
   const filteredConfigs = configs.filter((item) => {
-    const templateName = item.template_id ? templateMap.get(item.template_id) ?? item.template_id : ""
+    const templateName = item.template_name ?? ""
     const matchesKeyword =
       normalizedKeyword.length === 0 ||
       [item.name, item.model, item.endpoint, item.group_name ?? "", templateName]
@@ -153,8 +152,8 @@ export default async function ConfigsPage({
           <CardTitle>配置列表</CardTitle>
           <CardDescription>
             {hasActiveFilters
-              ? `共 ${configs.length} 条，筛选后 ${filteredConfigs.length} 条。模板、分组、维护态都直接在这里收口。`
-              : `共 ${configs.length} 条。模板、分组、维护态都直接在这里收口。`}
+              ? `共 ${configs.length} 条，筛选后 ${filteredConfigs.length} 条。模板来源已经上收到了模型层。`
+              : `共 ${configs.length} 条。模板来源已经上收到了模型层。`}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -225,7 +224,6 @@ export default async function ConfigsPage({
           <ConfigsTable
             configs={filteredConfigs}
             returnPath={returnPath}
-            templateEntries={Array.from(templateMap.entries())}
           />
         </CardContent>
       </Card>

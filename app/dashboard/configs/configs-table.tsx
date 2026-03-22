@@ -13,7 +13,6 @@ import type { CheckConfigRecord } from "@/lib/admin/types"
 type ConfigsTableProps = {
   configs: CheckConfigRecord[]
   returnPath: string
-  templateEntries: Array<[string, string]>
 }
 
 function formatTemplateLabel(value: string) {
@@ -21,10 +20,9 @@ function formatTemplateLabel(value: string) {
   return chars.length > 10 ? `${chars.slice(0, 10).join("")}...` : value
 }
 
-export function ConfigsTable({ configs, returnPath, templateEntries }: ConfigsTableProps) {
+export function ConfigsTable({ configs, returnPath }: ConfigsTableProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const selectAllRef = useRef<HTMLInputElement>(null)
-  const templateMap = useMemo(() => new Map(templateEntries), [templateEntries])
   const configIds = useMemo(() => configs.map((item) => item.id), [configs])
   const configIdSet = useMemo(() => new Set(configIds), [configIds])
   const visibleSelectedIds = useMemo(
@@ -194,11 +192,9 @@ export function ConfigsTable({ configs, returnPath, templateEntries }: ConfigsTa
                   <td className="py-3 pr-4">
                     <div
                       className="truncate"
-                      title={item.template_id ? templateMap.get(item.template_id) ?? item.template_id : "-"}
+                      title={item.template_name ?? "-"}
                     >
-                      {item.template_id
-                        ? formatTemplateLabel(templateMap.get(item.template_id) ?? item.template_id)
-                        : "-"}
+                      {item.template_name ? formatTemplateLabel(item.template_name) : "-"}
                     </div>
                   </td>
                   <td className="py-3 pr-4">

@@ -15,10 +15,8 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { formatDateTime } from "@/lib/admin/format"
-import { stringifyJson } from "@/lib/admin/json"
-import { getConfigById, listModels, listTemplates } from "@/lib/admin/queries"
+import { getConfigById, listModels } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 function getParam(value: string | string[] | undefined) {
@@ -41,7 +39,7 @@ export default async function EditConfigPage({
     return <PageHeader title="编辑配置" description="缺少 service role，这页不会工作。" />
   }
 
-  const [config, templates, models] = await Promise.all([getConfigById(id), listTemplates(), listModels()])
+  const [config, models] = await Promise.all([getConfigById(id), listModels()])
 
   if (!config) {
     notFound()
@@ -64,7 +62,7 @@ export default async function EditConfigPage({
         <CardHeader>
           <CardTitle>编辑配置</CardTitle>
           <CardDescription>
-            谨慎删除。`check_history` 会跟着一起被级联删掉。
+            配置只保存连接信息。模板改动请去对应模型里处理。谨慎删除，`check_history` 会跟着一起被级联删掉。
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,20 +90,8 @@ export default async function EditConfigPage({
               <Input id="api_key" name="api_key" defaultValue={config.api_key} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="template_id">请求模板</Label>
-              <select
-                id="template_id"
-                name="template_id"
-                className="flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
-                defaultValue={config.template_id ?? ""}
-              >
-                <option value="">不使用模板</option>
-                {templates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name} · {template.type}
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="resolved_template">当前模板</Label>
+              <Input id="resolved_template" defaultValue={config.template_name ?? "未绑定模板"} disabled />
             </div>
             <div className="flex items-center gap-6 pt-7 text-sm">
               <label className="flex items-center gap-2">
@@ -120,24 +106,6 @@ export default async function EditConfigPage({
                 />
                 维护模式
               </label>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="request_header">自定义请求头 JSON</Label>
-              <Textarea
-                id="request_header"
-                name="request_header"
-                rows={8}
-                defaultValue={stringifyJson(config.request_header)}
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="metadata">metadata JSON</Label>
-              <Textarea
-                id="metadata"
-                name="metadata"
-                rows={8}
-                defaultValue={stringifyJson(config.metadata)}
-              />
             </div>
             <div className="flex items-center gap-3 md:col-span-2">
               <Button type="submit">保存更改</Button>

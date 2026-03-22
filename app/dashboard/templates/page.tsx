@@ -37,7 +37,7 @@ export default async function TemplatesPage({
       <Card>
         <CardHeader>
           <CardTitle>模板列表</CardTitle>
-          <CardDescription>共 {templates.length} 条。模板类型必须和配置类型匹配。</CardDescription>
+          <CardDescription>共 {templates.length} 条。模板类型必须和模型类型匹配。</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
@@ -47,6 +47,7 @@ export default async function TemplatesPage({
                 <th className="py-3 pr-4">Provider</th>
                 <th className="py-3 pr-4">请求头</th>
                 <th className="py-3 pr-4">metadata</th>
+                <th className="py-3 pr-4">引用模型</th>
                 <th className="py-3">更新时间</th>
               </tr>
             </thead>
@@ -59,6 +60,7 @@ export default async function TemplatesPage({
                   <td className="py-3 pr-4"><ProviderBadge type={item.type} /></td>
                   <td className="py-3 pr-4 max-w-sm truncate font-mono text-xs">{item.request_header ? JSON.stringify(item.request_header) : "-"}</td>
                   <td className="py-3 pr-4 max-w-sm truncate font-mono text-xs">{item.metadata ? JSON.stringify(item.metadata) : "-"}</td>
+                  <td className="py-3 pr-4">{item.model_count ?? 0}</td>
                   <td className="py-3">{formatDateTime(item.updated_at)}</td>
                 </tr>
               ))}
