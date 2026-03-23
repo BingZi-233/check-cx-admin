@@ -1,6 +1,11 @@
-# check-cx-admin
+# Check CX Admin
 
-`check-cx-admin` 是 `BingZi-233/check-cx` 的后台管理项目，用来管理以下核心对象：
+`check-cx-admin` 是 `check-cx` 的后台管理项目，用于维护监控系统运行所依赖的核心配置与管理数据，包括：
+
+## 相关项目
+
+- 前台监控面板：[`BingZi-233/check-cx`](https://github.com/BingZi-233/check-cx)
+- 前台项目负责轮询检测、状态展示与只读 API；当前项目负责模型、Provider、模板、分组及系统通知等后台管理能力。
 
 - `check_models`：模型配置
 - `check_configs`：Provider 配置
@@ -10,7 +15,7 @@
 - `check_history`：检测历史（只读）
 - `check_poller_leases`：轮询主节点状态（只读）
 
-技术栈保持克制，没有乱加花活：
+主要技术栈如下：
 
 - Next.js 16 App Router
 - React 19
@@ -25,11 +30,11 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-默认地址：`http://localhost:3000`
+默认访问地址为 `http://localhost:3000`。
 
 ## 环境变量
 
-见 `.env.example`。
+环境变量示例请参见 `.env.example`。
 
 ### 必填
 
@@ -39,20 +44,20 @@ pnpm dev
 
 ### 可选
 
-- `APP_URL`：后台对外访问地址，反向代理或 Docker 生产环境强烈建议设置，例如 `https://admin.example.com`
+- `APP_URL`：后台对外访问地址；在反向代理或 Docker 生产环境中，建议显式设置，例如 `https://admin.example.com`
 - `SUPABASE_OAUTH_PROVIDERS`：默认 `google,github`
-- `ADMIN_EMAILS`：逗号分隔白名单；留空表示任意已登录用户都能进后台
+- `ADMIN_EMAILS`：逗号分隔的邮箱白名单；留空表示任意已登录用户均可访问后台
 
 ## 认证说明
 
-- 登录页优先走 OAuth。
-- 邮箱密码登录保留给初始化与兜底。
-- 登录、OAuth 发起、回调、登出全部走服务端。
+- 登录页默认优先使用 OAuth。
+- 邮箱密码登录保留为初始化与兜底方案。
+- 登录、OAuth 发起、回调及登出流程均由服务端处理。
 - `/dashboard/**` 路由受 Supabase 会话保护。
-- 如果设置了 `ADMIN_EMAILS`，OAuth 回调、密码登录和后台页面都会校验邮箱白名单。
-- 项目认证配置全部改为服务端运行时读取，便于在 Docker 运行时通过环境变量覆盖。
-- 生产环境请设置 `APP_URL`，否则 OAuth 回调地址会依赖请求头，反代配置不对时就可能变成 `http://localhost:3000`。
-- 还要在 Supabase Auth 的 Redirect URLs 里加入 `APP_URL/auth/callback`，例如 `https://admin.example.com/auth/callback`。
+- 如果设置了 `ADMIN_EMAILS`，则 OAuth 回调、密码登录和后台页面访问都会校验邮箱白名单。
+- 项目认证配置在服务端运行时读取，便于在 Docker 等部署环境中通过环境变量覆盖。
+- 生产环境建议显式设置 `APP_URL`；否则 OAuth 回调地址会依赖请求头，在反向代理配置不当时可能错误地指向 `http://localhost:3000`。
+- 同时需要在 Supabase Auth 的 Redirect URLs 中加入 `APP_URL/auth/callback`，例如 `https://admin.example.com/auth/callback`。
 
 ## Docker
 
@@ -64,17 +69,17 @@ docker build -t check-cx-admin:local .
 
 ### 本地运行容器
 
-先准备 `.env`，变量名和 `.env.example` 一致。
+请先准备 `.env` 文件，变量名与 `.env.example` 保持一致。
 
 ```bash
 docker compose up -d
 ```
 
-镜像运行时直接读取 `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_OR_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`APP_URL`、`SUPABASE_OAUTH_PROVIDERS`、`ADMIN_EMAILS`，不会把这些值写死进前端产物。
+镜像在运行时直接读取 `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_OR_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`APP_URL`、`SUPABASE_OAUTH_PROVIDERS`、`ADMIN_EMAILS`，不会将这些值固化到前端构建产物中。
 
 ## 生产部署示例
 
-别在生产里盲目跑 `latest`。最简单的正确做法，是固定版本 tag。
+生产环境不建议直接使用 `latest` 标签，推荐固定使用明确的版本 tag。
 
 ### 1. 准备目录
 
@@ -85,7 +90,7 @@ cd /opt/check-cx-admin
 
 ### 2. 写入环境变量
 
-创建 `.env`：
+创建 `.env` 文件：
 
 ```env
 SUPABASE_URL=https://service.check-cx.org
@@ -98,13 +103,13 @@ ADMIN_EMAILS=admin@example.com
 
 ### 3. 配置 Supabase Auth 回调白名单
 
-至少加入这一条：
+至少加入以下回调地址：
 
 ```text
 https://admin.example.com/auth/callback
 ```
 
-如果你本地开发还要测 OAuth，再额外加：
+如果本地开发环境也需要测试 OAuth，可额外加入：
 
 ```text
 http://localhost:3000/auth/callback
@@ -112,7 +117,7 @@ http://localhost:3000/auth/callback
 
 ### 4. 写入生产 compose
 
-创建 `docker-compose.yml`：
+创建 `docker-compose.yml` 文件：
 
 ```yaml
 services:
@@ -129,7 +134,7 @@ services:
       APP_URL: ${APP_URL}
 ```
 
-如果你前面有 Nginx / Caddy / Traefik，就把容器只绑定到内网端口；这里为了简单，先直接暴露 `3000`。
+如果前置使用 Nginx、Caddy 或 Traefik 等反向代理，建议仅将容器绑定到内网端口。此处为便于演示，直接暴露 `3000` 端口。
 
 ### 5. 启动
 
@@ -140,7 +145,7 @@ docker compose up -d
 
 ### 6. 更新版本
 
-把 `image` 从旧 tag 改成新 tag，然后执行：
+将 `image` 从旧版本 tag 更新为新版本 tag 后，执行：
 
 ```bash
 docker compose pull
@@ -155,12 +160,12 @@ docker compose logs -f check-cx-admin
 
 ## GitHub Actions
 
-仓库已添加两条工作流：
+仓库当前包含以下两条工作流：
 
 - `.github/workflows/ci.yml`：在 `main` push 和 PR 上执行 `pnpm lint`、`pnpm build`
 - `.github/workflows/docker.yml`：推送 `v*` tag 或手动触发时，发布 `docker.io/bingzi233/check-cx-admin`
 
-Docker 发布工作流需要配置以下 secrets：
+Docker 发布工作流需要配置以下 Secrets：
 
 - `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
@@ -174,14 +179,14 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-推送后，`docker.yml` 会自动构建并发布：
+推送后，`docker.yml` 会自动构建并发布以下镜像：
 
 - `docker.io/bingzi233/check-cx-admin:v0.1.1`
 - `docker.io/bingzi233/check-cx-admin:latest`
 
 ### 手动触发
 
-也可以在 GitHub Actions 页面手动运行 `Build and Push Docker Image`。
+也可以在 GitHub Actions 页面手动触发 `Build and Push Docker Image` 工作流。
 
 ## 当前页面
 
@@ -197,6 +202,6 @@ git push origin v0.1.0
 
 ## 数据权限建议
 
-这个后台默认通过 `SUPABASE_SERVICE_ROLE_KEY` 读写管理表，因为上游项目当前 RLS 主要偏前台读取，并没有给管理后台准备完整的写策略。
+该后台默认通过 `SUPABASE_SERVICE_ROLE_KEY` 读写管理表。原因在于上游项目当前的 RLS 策略主要面向前台读取场景，尚未为管理后台提供完整的写入策略。
 
-别把 `SUPABASE_SERVICE_ROLE_KEY` 暴露到客户端。这个项目已经把它限制在服务端使用。
+请勿将 `SUPABASE_SERVICE_ROLE_KEY` 暴露到客户端。当前项目已将其限制为仅在服务端使用。
