@@ -14,6 +14,7 @@ type BatchConfigOperation =
   | "maintenance_on"
   | "maintenance_off"
   | "replace_model"
+  | "clear_history"
   | "delete"
 
 function withSourceMessage(message: string, sourceId: string | null) {
@@ -56,6 +57,7 @@ function parseBatchConfigOperation(value: FormDataEntryValue | null): BatchConfi
     operation === "maintenance_on" ||
     operation === "maintenance_off" ||
     operation === "replace_model" ||
+    operation === "clear_history" ||
     operation === "delete"
   ) {
     return operation
@@ -191,6 +193,44 @@ export async function deleteConfigAction(formData: FormData) {
   redirect(withMessage("/dashboard/configs", "success", "配置已删除"))
 }
 
+export async function clearConfigHistoryAction(formData: FormData) {
+  await requireAdminUser()
+
+  const id = requiredString(formData, "id", "配置 ID")
+  const returnPath = getConfigsReturnPath(formData)
+
+  try {
+    const client = createAdminClient()
+    const { data: config, error: configError } = await client
+      .from("check_configs")
+      .select("id, name")
+      .eq("id", id)
+      .maybeSingle()
+
+    if (configError) {
+      throw configError
+    }
+
+    if (!config) {
+      throw new Error("指定配置不存在或已被删除")
+    }
+
+    const { error } = await client.from("check_history").delete().eq("config_id", id)
+
+    if (error) {
+      throw error
+    }
+
+    revalidatePath("/dashboard")
+    revalidatePath("/dashboard/configs")
+    revalidatePath("/dashboard/history")
+    redirect(withPathMessage(returnPath, "success", `已清理配置「${config.name}」的请求历史`))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "清理请求历史失败"
+    redirect(withPathMessage(returnPath, "error", message))
+  }
+}
+
 export async function batchConfigAction(formData: FormData) {
   await requireAdminUser()
 
@@ -313,6 +353,30 @@ export async function batchConfigAction(formData: FormData) {
         successMessage = `已将 ${ids.length} 条配置切换到模型「${targetModel.model}」`
         break
       }
+      case "clear_history": {
+        const { data: selectedConfigs, error: selectedConfigsError } = await client
+          .from("check_configs")
+          .select("id")
+          .in("id", ids)
+
+        if (selectedConfigsError) {
+          throw selectedConfigsError
+        }
+
+        const existingIds = new Set((selectedConfigs ?? []).map((item) => item.id))
+        if (existingIds.size !== ids.length) {
+          throw new Error("部分选中的配置不存在或已被删除，请刷新列表后重试")
+        }
+
+        const { error } = await client.from("check_history").delete().in("config_id", ids)
+
+        if (error) {
+          throw error
+        }
+
+        successMessage = `已清理 ${ids.length} 条配置的请求历史`
+        break
+      }
       case "delete": {
         const { error } = await client.from("check_configs").delete().in("id", ids)
 
@@ -331,5 +395,6 @@ export async function batchConfigAction(formData: FormData) {
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/configs")
+  revalidatePath("/dashboard/history")
   redirect(withPathMessage(returnPath, "success", successMessage))
 }

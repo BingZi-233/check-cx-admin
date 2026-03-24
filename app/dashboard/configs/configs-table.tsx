@@ -2,11 +2,22 @@
 
 import Link from "next/link"
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react"
-import { CopyIcon, ShuffleIcon } from "lucide-react"
+import { CopyIcon, EraserIcon, ShuffleIcon } from "lucide-react"
 
-import { batchConfigAction } from "@/app/dashboard/configs/actions"
+import { batchConfigAction, clearConfigHistoryAction } from "@/app/dashboard/configs/actions"
 import { BooleanBadge, ProviderBadge } from "@/components/admin/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   Sheet,
   SheetContent,
@@ -112,15 +123,6 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
 
     if (submitter.value === "replace_model" && !resolvedTargetModelId) {
       event.preventDefault()
-      return
-    }
-
-    if (submitter.value === "delete") {
-      const confirmed = window.confirm(`确定删除选中的 ${visibleSelectedIds.length} 条配置吗？相关检测历史会一起被级联删除。`)
-
-      if (!confirmed) {
-        event.preventDefault()
-      }
     }
   }
 
@@ -170,15 +172,64 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
             <ShuffleIcon />
             批量换模型
           </Button>
-          <Button
-            type="submit"
-            name="operation"
-            value="delete"
-            variant="destructive"
-            disabled={!hasSelection}
-          >
-            批量删除
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={<Button type="button" variant="destructive" disabled={!hasSelection} />}
+            >
+              批量清理历史
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认批量清理请求历史？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  将清理选中的 {visibleSelectedIds.length} 条配置在 `check_history` 里的全部请求历史。
+                  这不会删除配置本身，但历史记录不可恢复。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  type="submit"
+                  form={formId}
+                  name="operation"
+                  value="clear_history"
+                  variant="destructive"
+                  disabled={!hasSelection}
+                >
+                  确认清理
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={<Button type="button" variant="destructive" disabled={!hasSelection} />}
+            >
+              批量删除
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认批量删除配置？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  将删除选中的 {visibleSelectedIds.length} 条配置，相关检测历史也会一起被级联删除。
+                  这个操作不可恢复。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  type="submit"
+                  form={formId}
+                  name="operation"
+                  value="delete"
+                  variant="destructive"
+                  disabled={!hasSelection}
+                >
+                  确认删除
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -193,7 +244,7 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
             <col style={{ width: "15%" }} />
             <col style={{ width: "11%" }} />
             <col style={{ width: "12%" }} />
-            <col style={{ width: "96px" }} />
+            <col style={{ width: "180px" }} />
           </colgroup>
           <thead className="text-xs text-muted-foreground">
             <tr className="border-b">
@@ -271,13 +322,44 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
                   </td>
                   <td className="py-3" title={formatDateTime(item.updated_at)}>{formatDate(item.updated_at)}</td>
                   <td className="py-3">
-                    <Button
-                      variant="outline"
-                      render={<Link href={`/dashboard/configs/new?source=${item.id}`} />}
-                    >
-                      <CopyIcon />
-                      复制
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        render={<Link href={`/dashboard/configs/new?source=${item.id}`} />}
+                      >
+                        <CopyIcon />
+                        复制
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger render={<Button type="button" variant="destructive" />}>
+                          <EraserIcon />
+                          清理历史
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>确认清理这条配置的请求历史？</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              将清理配置「{item.name}」在 `check_history` 里的全部请求历史。
+                              这不会删除配置本身，但历史记录不可恢复。
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <form id={`clear-config-history-${item.id}`} action={clearConfigHistoryAction}>
+                            <input type="hidden" name="id" value={item.id} />
+                            <input type="hidden" name="return_to" value={returnPath} />
+                          </form>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>取消</AlertDialogCancel>
+                            <AlertDialogAction
+                              type="submit"
+                              form={`clear-config-history-${item.id}`}
+                              variant="destructive"
+                            >
+                              确认清理
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </td>
                 </tr>
               ))
