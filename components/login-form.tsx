@@ -1,7 +1,7 @@
 import { GithubIcon, LogInIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -79,12 +79,10 @@ export function LoginForm({
                   }
 
                   return (
-                    <Button key={provider} variant="outline" type="button" asChild>
-                      <a href={href}>
-                        <ProviderIcon provider={provider} />
-                        使用 {providerLabel(provider)} 登录
-                      </a>
-                    </Button>
+                    <a key={provider} href={href} className={buttonVariants({ variant: "outline" })}>
+                      <ProviderIcon provider={provider} />
+                      使用 {providerLabel(provider)} 登录
+                    </a>
                   )
                 })}
               </Field>
