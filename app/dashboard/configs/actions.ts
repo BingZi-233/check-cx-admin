@@ -14,6 +14,9 @@ type BatchConfigOperation =
   | "maintenance_on"
   | "maintenance_off"
   | "replace_model"
+  | "replace_key"
+  | "replace_endpoint"
+  | "replace_name"
   | "clear_history"
   | "delete"
 
@@ -57,6 +60,9 @@ function parseBatchConfigOperation(value: FormDataEntryValue | null): BatchConfi
     operation === "maintenance_on" ||
     operation === "maintenance_off" ||
     operation === "replace_model" ||
+    operation === "replace_key" ||
+    operation === "replace_endpoint" ||
+    operation === "replace_name" ||
     operation === "clear_history" ||
     operation === "delete"
   ) {
@@ -351,6 +357,105 @@ export async function batchConfigAction(formData: FormData) {
         }
 
         successMessage = `已将 ${ids.length} 条配置切换到模型「${targetModel.model}」`
+        break
+      }
+      case "replace_key": {
+        const targetApiKey = requiredString(formData, "target_api_key", "新 API Key").trim()
+
+        if (targetApiKey.length > 512) {
+          throw new Error("API Key 长度不能超过 512 个字符")
+        }
+
+        const { data: selectedConfigs, error: selectedConfigsError } = await client
+          .from("check_configs")
+          .select("id")
+          .in("id", ids)
+
+        if (selectedConfigsError) {
+          throw selectedConfigsError
+        }
+
+        const existingIds = new Set((selectedConfigs ?? []).map((item) => item.id))
+        if (existingIds.size !== ids.length) {
+          throw new Error("部分选中的配置不存在或已被删除，请刷新列表后重试")
+        }
+
+        const { error } = await client
+          .from("check_configs")
+          .update({ api_key: targetApiKey })
+          .in("id", ids)
+
+        if (error) {
+          throw error
+        }
+
+        successMessage = `已替换 ${ids.length} 条配置的密钥`
+        break
+      }
+      case "replace_endpoint": {
+        const targetEndpoint = requiredString(formData, "target_endpoint", "新 API 地址").trim()
+
+        if (targetEndpoint.length > 2048) {
+          throw new Error("API 地址长度不能超过 2048 个字符")
+        }
+
+        const { data: selectedConfigs, error: selectedConfigsError } = await client
+          .from("check_configs")
+          .select("id")
+          .in("id", ids)
+
+        if (selectedConfigsError) {
+          throw selectedConfigsError
+        }
+
+        const existingIds = new Set((selectedConfigs ?? []).map((item) => item.id))
+        if (existingIds.size !== ids.length) {
+          throw new Error("部分选中的配置不存在或已被删除，请刷新列表后重试")
+        }
+
+        const { error } = await client
+          .from("check_configs")
+          .update({ endpoint: targetEndpoint })
+          .in("id", ids)
+
+        if (error) {
+          throw error
+        }
+
+        successMessage = `已替换 ${ids.length} 条配置的地址`
+        break
+      }
+      case "replace_name": {
+        const targetName = requiredString(formData, "target_name", "新名称").trim()
+
+        if (targetName.length > 255) {
+          throw new Error("名称长度不能超过 255 个字符")
+        }
+
+        const { data: selectedConfigs, error: selectedConfigsError } = await client
+          .from("check_configs")
+          .select("id")
+          .in("id", ids)
+
+        if (selectedConfigsError) {
+          throw selectedConfigsError
+        }
+
+        const existingIds = new Set((selectedConfigs ?? []).map((item) => item.id))
+        if (existingIds.size !== ids.length) {
+          throw new Error("部分选中的配置不存在或已被删除，请刷新列表后重试")
+        }
+
+        const { error } = await client
+          .from("check_configs")
+          .update({ name: targetName })
+          .in("id", ids)
+
+        if (error) {
+          throw error
+        }
+
+        successMessage = `已替换 ${ids.length} 条配置的名称`
         break
       }
       case "clear_history": {

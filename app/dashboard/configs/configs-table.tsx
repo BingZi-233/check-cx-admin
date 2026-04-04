@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react"
-import { CopyIcon, EraserIcon, ShuffleIcon } from "lucide-react"
+import { CopyIcon, EraserIcon, GlobeIcon, KeyRoundIcon, PencilIcon, ShuffleIcon } from "lucide-react"
 
 import { batchConfigAction, clearConfigHistoryAction } from "@/app/dashboard/configs/actions"
 import { BooleanBadge, ProviderBadge } from "@/components/admin/status-badge"
@@ -56,7 +56,13 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
   const formId = "batch-config-form"
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isReplaceModelOpen, setIsReplaceModelOpen] = useState(false)
+  const [isReplaceKeyOpen, setIsReplaceKeyOpen] = useState(false)
+  const [isReplaceEndpointOpen, setIsReplaceEndpointOpen] = useState(false)
+  const [isReplaceNameOpen, setIsReplaceNameOpen] = useState(false)
   const [targetModelId, setTargetModelId] = useState("")
+  const [targetApiKey, setTargetApiKey] = useState("")
+  const [targetEndpoint, setTargetEndpoint] = useState("")
+  const [targetName, setTargetName] = useState("")
   const selectAllRef = useRef<HTMLInputElement>(null)
   const configIds = useMemo(() => configs.map((item) => item.id), [configs])
   const configIdSet = useMemo(() => new Set(configIds), [configIds])
@@ -171,6 +177,42 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
           >
             <ShuffleIcon />
             批量换模型
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!hasSelection}
+            onClick={() => {
+              setTargetApiKey("")
+              setIsReplaceKeyOpen(true)
+            }}
+          >
+            <KeyRoundIcon />
+            批量换密钥
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!hasSelection}
+            onClick={() => {
+              setTargetEndpoint("")
+              setIsReplaceEndpointOpen(true)
+            }}
+          >
+            <GlobeIcon />
+            批量换地址
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!hasSelection}
+            onClick={() => {
+              setTargetName("")
+              setIsReplaceNameOpen(true)
+            }}
+          >
+            <PencilIcon />
+            批量换名称
           </Button>
           <AlertDialog>
             <AlertDialogTrigger
@@ -444,6 +486,144 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
               确认替换
             </Button>
             <Button type="button" variant="outline" onClick={() => setIsReplaceModelOpen(false)}>
+              取消
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+      <Sheet open={isReplaceKeyOpen && hasSelection} onOpenChange={setIsReplaceKeyOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>批量替换密钥</SheetTitle>
+            <SheetDescription>
+              将选中的 {visibleSelectedIds.length} 条配置的 API Key 统一替换为新值。
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 space-y-4 px-6">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+              已选配置：{visibleSelectedIds.length}
+            </div>
+            <label className="space-y-2">
+              <span className="text-sm font-medium">新 API Key</span>
+              <input
+                type="password"
+                name="target_api_key"
+                form={formId}
+                value={targetApiKey}
+                onChange={(event) => setTargetApiKey(event.target.value)}
+                placeholder="输入新的 API Key"
+                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                required
+                autoComplete="off"
+              />
+            </label>
+          </div>
+          <SheetFooter>
+            {visibleSelectedIds.map((id) => (
+              <input key={id} type="hidden" name="ids" value={id} form={formId} />
+            ))}
+            <Button
+              type="submit"
+              name="operation"
+              value="replace_key"
+              form={formId}
+              disabled={!hasSelection || !targetApiKey.trim()}
+            >
+              确认替换
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsReplaceKeyOpen(false)}>
+              取消
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+      <Sheet open={isReplaceEndpointOpen && hasSelection} onOpenChange={setIsReplaceEndpointOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>批量替换地址</SheetTitle>
+            <SheetDescription>
+              将选中的 {visibleSelectedIds.length} 条配置的 API 端点地址统一替换为新值。
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 space-y-4 px-6">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+              已选配置：{visibleSelectedIds.length}
+            </div>
+            <label className="space-y-2">
+              <span className="text-sm font-medium">新 API 地址</span>
+              <input
+                type="url"
+                name="target_endpoint"
+                form={formId}
+                value={targetEndpoint}
+                onChange={(event) => setTargetEndpoint(event.target.value)}
+                placeholder="https://api.example.com/v1"
+                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                required
+                autoComplete="off"
+              />
+            </label>
+          </div>
+          <SheetFooter>
+            {visibleSelectedIds.map((id) => (
+              <input key={id} type="hidden" name="ids" value={id} form={formId} />
+            ))}
+            <Button
+              type="submit"
+              name="operation"
+              value="replace_endpoint"
+              form={formId}
+              disabled={!hasSelection || !targetEndpoint.trim()}
+            >
+              确认替换
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsReplaceEndpointOpen(false)}>
+              取消
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+      <Sheet open={isReplaceNameOpen && hasSelection} onOpenChange={setIsReplaceNameOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>批量替换名称</SheetTitle>
+            <SheetDescription>
+              将选中的 {visibleSelectedIds.length} 条配置的显示名称统一替换为新值。
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 space-y-4 px-6">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+              已选配置：{visibleSelectedIds.length}
+            </div>
+            <label className="space-y-2">
+              <span className="text-sm font-medium">新名称</span>
+              <input
+                type="text"
+                name="target_name"
+                form={formId}
+                value={targetName}
+                onChange={(event) => setTargetName(event.target.value)}
+                placeholder="输入新的显示名称"
+                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                required
+                autoComplete="off"
+              />
+            </label>
+          </div>
+          <SheetFooter>
+            {visibleSelectedIds.map((id) => (
+              <input key={id} type="hidden" name="ids" value={id} form={formId} />
+            ))}
+            <Button
+              type="submit"
+              name="operation"
+              value="replace_name"
+              form={formId}
+              disabled={!hasSelection || !targetName.trim()}
+            >
+              确认替换
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsReplaceNameOpen(false)}>
               取消
             </Button>
           </SheetFooter>
