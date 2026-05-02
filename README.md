@@ -22,6 +22,54 @@
 - shadcn/ui
 - Supabase Auth + Supabase Database
 
+## 一键部署 / 快速入口
+
+### Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fxingxinag%2Fcheck-cx-admin&project-name=check-cx-admin&repository-name=check-cx-admin)
+
+适配情况：
+
+- 项目是标准 `Next.js` 应用
+- 需要在 Vercel 环境变量中填写下方“环境变量”章节的配置
+- 生产环境建议设置 `APP_URL` 为最终访问域名
+- 需要在 Supabase Auth Redirect URLs 中加入 `APP_URL/auth/callback`
+
+### Railway
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https%3A%2F%2Fgithub.com%2Fxingxinag%2Fcheck-cx-admin)
+
+适配情况：
+
+- 仓库已有 `Dockerfile`
+- Railway 可按 Dockerfile 构建运行
+- 需要在 Railway Variables 中填写下方“环境变量”章节的配置
+- 生产环境必须正确设置 `APP_URL`，否则 OAuth 回调可能指向错误域名
+
+### Docker / 自建服务器
+
+```bash
+docker compose up -d
+```
+
+适配情况：
+
+- 仓库已有 `Dockerfile`
+- 仓库已有 `docker-compose.yml`
+- 默认镜像为 `bingzi233/check-cx-admin:latest`
+- 需要准备 `.env` 文件，内容可参考 `.env.example`
+
+### 其他平台支持情况
+
+| 平台 | 状态 | 说明 |
+|------|------|------|
+| Docker / 自建服务器 | 推荐 | 仓库已有 `Dockerfile` 和 `docker-compose.yml`，适合管理后台长期运行 |
+| Vercel | 可用 | 原生支持 Next.js，但要正确配置 `APP_URL` 和 Supabase OAuth 回调 |
+| Railway | 可用 | 可基于 Dockerfile 部署 |
+| Render | 理论可用 | 可按 Docker Web Service 部署，但仓库暂无 `render.yaml` 一键配置 |
+| Netlify | 不推荐 | 仓库暂无 `netlify.toml`，管理后台认证回调更适合 Node 服务端运行 |
+| Cloudflare Pages | 不推荐 | 仓库暂无 OpenNext/Workers 适配配置，Supabase service role 与 OAuth 回调更适合 Node/Docker/Vercel |
+
 ## 本地开发
 
 ```bash
