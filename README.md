@@ -22,6 +22,54 @@
 - shadcn/ui
 - Supabase Auth + Supabase Database
 
+## 一键部署 / 快速入口
+
+### Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fxingxinag%2Fcheck-cx-admin&project-name=check-cx-admin&repository-name=check-cx-admin)
+
+适配情况：
+
+- 项目是标准 `Next.js` 应用
+- 需要在 Vercel 环境变量中填写下方“环境变量”章节的配置
+- 生产环境建议设置 `APP_URL` 为最终访问域名
+- 需要在 Supabase Auth Redirect URLs 中加入 `APP_URL/auth/callback`
+
+### Railway
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https%3A%2F%2Fgithub.com%2Fxingxinag%2Fcheck-cx-admin)
+
+适配情况：
+
+- 仓库已有 `Dockerfile`
+- Railway 可按 Dockerfile 构建运行
+- 需要在 Railway Variables 中填写下方“环境变量”章节的配置
+- 生产环境必须正确设置 `APP_URL`，否则 OAuth 回调可能指向错误域名
+
+### Docker / 自建服务器
+
+```bash
+docker compose up -d
+```
+
+适配情况：
+
+- 仓库已有 `Dockerfile`
+- 仓库已有 `docker-compose.yml`
+- 默认镜像为 `bingzi233/check-cx-admin:latest`
+- 需要准备 `.env` 文件，内容可参考 `.env.example`
+
+### 其他平台支持情况
+
+| 平台 | 状态 | 说明 |
+|------|------|------|
+| Docker / 自建服务器 | 推荐 | 仓库已有 `Dockerfile` 和 `docker-compose.yml`，适合管理后台长期运行 |
+| Vercel | 可用 | 原生支持 Next.js，但要正确配置 `APP_URL` 和 Supabase OAuth 回调 |
+| Railway | 可用 | 可基于 Dockerfile 部署 |
+| Render | 理论可用 | 可按 Docker Web Service 部署，但仓库暂无 `render.yaml` 一键配置 |
+| Netlify | 不推荐 | 仓库暂无 `netlify.toml`，管理后台认证回调更适合 Node 服务端运行 |
+| Cloudflare Pages | 不推荐 | 仓库暂无 OpenNext/Workers 适配配置，Supabase service role 与 OAuth 回调更适合 Node/Docker/Vercel |
+
 ## 本地开发
 
 ```bash
@@ -34,19 +82,58 @@ pnpm dev
 
 ## 环境变量
 
-环境变量示例请参见 `.env.example`。
+环境变量示例请参见 `.env.example`。本项目会在服务端运行时读取这些变量，Docker、Vercel、Railway 等部署方式都需要按目标平台的环境变量配置方式填写。
 
 ### 必填
 
-- `SUPABASE_URL`
-- `SUPABASE_PUBLISHABLE_OR_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+| 变量 | 示例 | 说明 |
+|------|------|------|
+| `SUPABASE_URL` | `https://your-project.supabase.co` | Supabase 项目地址。可在 Supabase 项目后台的 `Project Settings` -> `API` 中找到。后台会用它连接 Supabase Auth 和数据库。 |
+| `SUPABASE_PUBLISHABLE_OR_ANON_KEY` | `eyJ...` | Supabase 的公开 anon/publishable key。用于创建普通 Supabase 客户端、处理登录状态和前后端会话交互。这个 key 可以出现在浏览器侧，但仍建议只从环境变量读取。 |
+| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ...` | Supabase service role key。后台管理功能会用它读写 `check_models`、`check_configs`、`check_request_templates`、`group_info`、`system_notifications` 等管理表。这个 key 权限很高，必须只放在服务端环境变量里，不能暴露到客户端、README、日志或截图中。 |
 
 ### 可选
 
-- `APP_URL`：后台对外访问地址；在反向代理或 Docker 生产环境中，建议显式设置，例如 `https://admin.example.com`
-- `SUPABASE_OAUTH_PROVIDERS`：默认 `google,github`
-- `ADMIN_EMAILS`：逗号分隔的邮箱白名单；留空表示任意已登录用户均可访问后台
+| 变量 | 默认值 | 示例 | 说明 |
+|------|--------|------|------|
+| `APP_URL` | 根据请求头推断 | `https://admin.example.com` | 后台对外访问地址。生产环境强烈建议显式设置，尤其是 Docker、Railway、Render 或反向代理部署。OAuth 登录会用它生成回调地址，例如 `https://admin.example.com/auth/callback`。如果不设置，反向代理配置不当时可能错误生成 `http://localhost:3000/auth/callback`。 |
+| `SUPABASE_OAUTH_PROVIDERS` | `google,github` | `google,github` | 登录页显示哪些 OAuth 登录入口。多个 provider 用英文逗号分隔。当前常用值是 `google`、`github`。对应 provider 还需要在 Supabase Auth 后台启用并配置 Client ID / Secret。 |
+| `ADMIN_EMAILS` | 空 | `admin@example.com,ops@example.com` | 管理后台邮箱白名单。留空表示任意成功登录的用户都能访问后台；填写后，只有列表中的邮箱可以通过 OAuth 回调、密码登录和后台页面访问校验。生产环境建议填写。 |
+
+### 最小可用配置
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_OR_ANON_KEY=your-anon-or-publishable-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+APP_URL=https://admin.example.com
+SUPABASE_OAUTH_PROVIDERS=google,github
+ADMIN_EMAILS=admin@example.com
+```
+
+### 配置来源
+
+1. `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_OR_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY` 在 Supabase 项目后台的 `Project Settings` -> `API` 中获取。
+2. `APP_URL` 填当前后台部署后的公开访问地址，本地开发可留空或使用 `http://localhost:3000`。
+3. `SUPABASE_OAUTH_PROVIDERS` 只控制本项目登录页显示入口，不会自动帮你开启 Supabase OAuth Provider。
+4. `ADMIN_EMAILS` 使用英文逗号分隔，不要加中文逗号；邮箱前后空格会被忽略。
+
+### 部署平台填写方式
+
+| 平台 | 填写位置 |
+|------|----------|
+| Vercel | Project Settings -> Environment Variables |
+| Railway | Service -> Variables |
+| Docker Compose | 项目目录下的 `.env` 文件 |
+| 自建服务器 | systemd、Docker、面板或反向代理部署工具提供的环境变量配置处 |
+
+### 安全注意事项
+
+1. `SUPABASE_SERVICE_ROLE_KEY` 是最高风险变量，泄露后攻击者可能绕过 RLS 直接读写数据库。
+2. 不要把真实 `.env` 提交到 Git。
+3. 不要把 service role key 填到前端公开配置、浏览器 localStorage 或客户端代码中。
+4. 生产环境建议设置 `ADMIN_EMAILS`，避免任意 Supabase 登录用户都能进入后台。
+5. 如果修改了 `APP_URL`，需要同步更新 Supabase Auth 的 Redirect URLs。
 
 ## 认证说明
 
