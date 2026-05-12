@@ -11,7 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { requireAppUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
+import { isAdminUser } from "@/lib/admin/permissions"
 import {
   getDashboardSummary,
   getPollerLease,
@@ -44,6 +46,7 @@ const quickLinks = [
 ]
 
 export default async function DashboardPage() {
+  const user = await requireAppUser()
   const adminDbReady = hasAdminDatabaseEnv()
 
   if (!adminDbReady) {
@@ -58,17 +61,21 @@ export default async function DashboardPage() {
   }
 
   const [summary, lease, notifications, recentHistory] = await Promise.all([
-    getDashboardSummary(),
+    getDashboardSummary(user),
     getPollerLease(),
     listNotifications(),
-    listRecentHistory(8),
+    listRecentHistory(user, 8),
   ])
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="概览"
-        description="先看关键对象和最近状态，别在模板垃圾里浪费时间。"
+        <PageHeader
+          title="概览"
+        description={
+          isAdminUser(user)
+            ? "先看关键对象和最近状态，别在模板垃圾里浪费时间。"
+            : `这里只展示你所在分组「${user.groupName}」的配置和运行结果。`
+        }
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card>
@@ -121,10 +128,16 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>快速入口</CardTitle>
-            <CardDescription>最先值得做的几个对象，已经按优先级摆好。</CardDescription>
+            <CardDescription>
+              {isAdminUser(user)
+                ? "最先值得做的几个对象，已经按优先级摆好。"
+                : "你只需要关心自己分组里的配置，其他全局对象交给管理员。"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {quickLinks.map((item) => (
+            {quickLinks
+              .filter((item) => isAdminUser(user) || item.href === "/dashboard/configs")
+              .map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

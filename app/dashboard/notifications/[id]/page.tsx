@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
 import { getNotificationById } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
@@ -32,6 +33,7 @@ export default async function EditNotificationPage({
   params: Promise<{ id: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const { id } = await params
   const query = await searchParams
   const error = getParam(query.error)

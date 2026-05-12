@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/admin/page-header"
 import { ProviderBadge } from "@/components/admin/status-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
 import { listModels } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
@@ -21,6 +22,7 @@ export default async function ModelsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const params = await searchParams
   const success = getParam(params.success)
   const error = getParam(params.error)

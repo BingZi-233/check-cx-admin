@@ -1,4 +1,5 @@
 export type ProviderType = "openai" | "gemini" | "anthropic"
+export type UserRole = "admin" | "member"
 
 export type NotificationLevel = "info" | "warning" | "error"
 
@@ -21,6 +22,27 @@ export interface AdminUser {
   email: string
   displayName: string
   avatarUrl?: string | null
+}
+
+export interface AppUser extends AdminUser {
+  role: UserRole
+  groupName: string | null
+  directoryUserId: string | null
+  isBootstrapAdmin: boolean
+}
+
+export interface AdminDirectoryUserRecord {
+  id: string
+  email: string
+  role: UserRole
+  group_name: string | null
+  auth_user_id: string | null
+  invited_by: string | null
+  is_active: boolean | null
+  invited_at: string | null
+  activated_at: string | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface CheckRequestTemplateRecord {

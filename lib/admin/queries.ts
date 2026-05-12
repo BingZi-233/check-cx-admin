@@ -1,6 +1,8 @@
 import "server-only"
 
 import {
+  AdminDirectoryUserRecord,
+  AppUser,
   AvailabilityStatRecord,
   CheckConfigRecord,
   CheckHistoryRecord,
@@ -11,6 +13,7 @@ import {
   PollerLeaseRecord,
   SystemNotificationRecord,
 } from "@/lib/admin/types"
+import { getRequiredGroupName, isAdminUser } from "@/lib/admin/permissions"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
 type CountResult = {
@@ -43,7 +46,61 @@ async function countRows(
   return count ?? 0
 }
 
-export async function getDashboardSummary(): Promise<DashboardSummary> {
+// Supabase query builder generics are too deeply nested here; keep the boundary local.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyConfigScope(query: any, user: AppUser) {
+  if (isAdminUser(user)) {
+    return query
+  }
+
+  return query.eq("group_name", getRequiredGroupName(user))
+}
+
+async function listScopedConfigIds(user: AppUser) {
+  if (isAdminUser(user)) {
+    return null
+  }
+
+  const client = createAdminClient()
+  const { data, error } = await client
+    .from("check_configs")
+    .select("id")
+    .eq("group_name", getRequiredGroupName(user))
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []).map((item) => item.id)
+}
+
+export async function getDashboardSummary(user: AppUser): Promise<DashboardSummary> {
+  if (!isAdminUser(user)) {
+    const [configs, activeNotificationCount, scopedConfigIds] = await Promise.all([
+      listConfigs(user),
+      countRows("system_notifications", (query) => query.eq("is_active", true)),
+      listScopedConfigIds(user),
+    ])
+
+    const recentErrorCount =
+      scopedConfigIds && scopedConfigIds.length > 0
+        ? await countRows("check_history", (query) =>
+            query.in("config_id", scopedConfigIds).in("status", ["failed", "validation_failed", "error"])
+          )
+        : 0
+
+    return {
+      modelCount: new Set(configs.map((item) => item.model_id)).size,
+      configCount: configs.length,
+      enabledConfigCount: configs.filter((item) => Boolean(item.enabled)).length,
+      maintenanceConfigCount: configs.filter((item) => Boolean(item.is_maintenance)).length,
+      templateCount: new Set(configs.map((item) => item.template_id).filter(Boolean)).size,
+      groupCount: new Set(configs.map((item) => item.group_name).filter(Boolean)).size,
+      activeNotificationCount,
+      recentErrorCount,
+    }
+  }
+
   const [
     modelCount,
     configCount,
@@ -78,14 +135,18 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   }
 }
 
-export async function listConfigs() {
+export async function listConfigs(user: AppUser) {
   const client = createAdminClient()
-  const { data, error } = await client
+  const scopedQuery = applyConfigScope(
+    client
     .from("check_configs")
     .select(
       "id, name, type, model_id, endpoint, api_key, enabled, is_maintenance, group_name, created_at, updated_at, check_models(model, template_id, check_request_templates(id, name))"
     )
-    .order("updated_at", { ascending: false })
+    .order("updated_at", { ascending: false }),
+    user
+  )
+  const { data, error } = await scopedQuery
 
   if (error) {
     throw error
@@ -125,15 +186,18 @@ export async function listConfigs() {
   }))
 }
 
-export async function getConfigById(id: string) {
+export async function getConfigById(id: string, user: AppUser) {
   const client = createAdminClient()
-  const { data, error } = await client
+  const scopedQuery = applyConfigScope(
+    client
     .from("check_configs")
     .select(
       "id, name, type, model_id, endpoint, api_key, enabled, is_maintenance, group_name, created_at, updated_at, check_models(model, template_id, check_request_templates(id, name))"
     )
-    .eq("id", id)
-    .maybeSingle()
+    .eq("id", id),
+    user
+  )
+  const { data, error } = await scopedQuery.maybeSingle()
 
   if (error) {
     throw error
@@ -334,6 +398,20 @@ export async function listGroups() {
   return (data ?? []) as GroupInfoRecord[]
 }
 
+export async function listAdminUsers() {
+  const client = createAdminClient()
+  const { data, error } = await client
+    .from("admin_users")
+    .select("*")
+    .order("updated_at", { ascending: false })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as AdminDirectoryUserRecord[]
+}
+
 export async function getGroupById(id: string) {
   const client = createAdminClient()
   const { data, error } = await client
@@ -378,15 +456,27 @@ export async function getNotificationById(id: string) {
   return data as SystemNotificationRecord | null
 }
 
-export async function listRecentHistory(limit = 120) {
+export async function listRecentHistory(user: AppUser, limit = 120) {
   const client = createAdminClient()
-  const { data, error } = await client
+  const scopedConfigIds = await listScopedConfigIds(user)
+
+  if (scopedConfigIds && scopedConfigIds.length === 0) {
+    return []
+  }
+
+  let query = client
     .from("check_history")
     .select(
       "id, config_id, status, latency_ms, ping_latency_ms, checked_at, message, created_at, check_configs(id, name, type, model_id, group_name, check_models(model))"
     )
     .order("checked_at", { ascending: false })
     .limit(limit)
+
+  if (scopedConfigIds) {
+    query = query.in("config_id", scopedConfigIds)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     throw error
@@ -430,12 +520,24 @@ export async function listRecentHistory(limit = 120) {
   }))
 }
 
-export async function listAvailabilityStats() {
+export async function listAvailabilityStats(user: AppUser) {
   const client = createAdminClient()
-  const { data, error } = await client
+  const scopedConfigIds = await listScopedConfigIds(user)
+
+  if (scopedConfigIds && scopedConfigIds.length === 0) {
+    return []
+  }
+
+  let query = client
     .from("availability_stats")
     .select("*")
     .order("config_id")
+
+  if (scopedConfigIds) {
+    query = query.in("config_id", scopedConfigIds)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     throw error

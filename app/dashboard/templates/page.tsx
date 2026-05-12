@@ -8,6 +8,7 @@ import { ProviderBadge } from "@/components/admin/status-badge"
 import { TemplateRowActions } from "@/components/admin/template-row-actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
 import { listTemplates } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
@@ -17,6 +18,7 @@ export default async function TemplatesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const params = await searchParams
   const success = Array.isArray(params.success) ? params.success[0] : params.success
   const error = Array.isArray(params.error) ? params.error[0] : params.error

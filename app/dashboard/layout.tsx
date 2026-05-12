@@ -13,17 +13,19 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { requireAdminUser } from "@/lib/admin/auth"
-import { getAdminDatabaseWarnings, hasAdminDatabaseEnv } from "@/lib/admin/server-env"
+import { requireAppUser } from "@/lib/admin/auth"
+import { describeUserScope, isAdminUser } from "@/lib/admin/permissions"
+import { getAdminDatabaseSchema, getAdminDatabaseWarnings, hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode
 }) {
-  const user = await requireAdminUser()
+  const user = await requireAppUser()
   const adminDbReady = hasAdminDatabaseEnv()
   const adminDbWarnings = getAdminDatabaseWarnings()
+  const dbSchema = adminDbReady ? getAdminDatabaseSchema() : null
 
   return (
     <SidebarProvider>
@@ -32,6 +34,8 @@ export default async function DashboardLayout({
           name: user.displayName,
           email: user.email,
           avatar: user.avatarUrl,
+          role: user.role,
+          groupName: user.groupName,
         }}
       />
       <SidebarInset>
@@ -42,13 +46,21 @@ export default async function DashboardLayout({
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">check-cx 后台管理</p>
               <p className="truncate text-xs text-muted-foreground">
-                当前登录：{user.email}
+                当前登录：{user.email} · {describeUserScope(user)}
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Badge variant={isAdminUser(user) ? "default" : "outline"}>
+                {isAdminUser(user) ? "管理员" : "成员"}
+              </Badge>
               <Badge variant={adminDbReady ? "secondary" : "destructive"}>
                 {adminDbReady ? "数据库已连通" : "缺少后台数据库权限"}
               </Badge>
+              {dbSchema ? (
+                <Badge variant={dbSchema === "public" ? "outline" : "secondary"}>
+                  schema: {dbSchema}
+                </Badge>
+              ) : null}
               <Link
                 href="https://github.com/BingZi-233/check-cx"
                 target="_blank"

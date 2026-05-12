@@ -11,6 +11,7 @@
 - `check_configs`：Provider 配置
 - `check_request_templates`：请求模板
 - `group_info`：分组信息
+- `admin_users`：后台邀请用户目录
 - `system_notifications`：系统通知
 - `check_history`：检测历史（只读）
 - `check_poller_leases`：轮询主节点状态（只读）
@@ -44,9 +45,10 @@ pnpm dev
 
 ### 可选
 
+- `SUPABASE_DB_SCHEMA`：后台数据库 schema，默认 `public`；单库调试时可设为 `dev`
 - `APP_URL`：后台对外访问地址；在反向代理或 Docker 生产环境中，建议显式设置，例如 `https://admin.example.com`
 - `SUPABASE_OAUTH_PROVIDERS`：默认 `google,github`
-- `ADMIN_EMAILS`：逗号分隔的邮箱白名单；留空表示任意已登录用户均可访问后台
+- `ADMIN_EMAILS`：逗号分隔的管理员兜底邮箱；仅建议用于 bootstrap 管理员，普通成员应通过 `admin_users` 邀请目录进入后台
 
 ## 认证说明
 
@@ -54,7 +56,11 @@ pnpm dev
 - 邮箱密码登录保留为初始化与兜底方案。
 - 登录、OAuth 发起、回调及登出流程均由服务端处理。
 - `/dashboard/**` 路由受 Supabase 会话保护。
-- 如果设置了 `ADMIN_EMAILS`，则 OAuth 回调、密码登录和后台页面访问都会校验邮箱白名单。
+- 后台默认是邀请制：普通用户必须先写入 `admin_users`，并预设其 `group_name`。
+- 管理员可以通过 `/dashboard/users` 维护邀请目录并发送邀请邮件。
+- 如果命中 `ADMIN_EMAILS`，该账号会被当作 bootstrap 管理员处理；这只是兜底方案，不建议代替邀请目录长期使用。
+- 普通成员登录后只能查看和维护自己 `group_name` 下的配置；管理员可以查看全部配置。
+- 后台所有数据库读写都走 `SUPABASE_DB_SCHEMA` 指定的 schema；未设置时默认使用 `public`。
 - 项目认证配置在服务端运行时读取，便于在 Docker 等部署环境中通过环境变量覆盖。
 - 生产环境建议显式设置 `APP_URL`；否则 OAuth 回调地址会依赖请求头，在反向代理配置不当时可能错误地指向 `http://localhost:3000`。
 - 同时需要在 Supabase Auth 的 Redirect URLs 中加入 `APP_URL/auth/callback`，例如 `https://admin.example.com/auth/callback`。
@@ -96,6 +102,7 @@ cd /opt/check-cx-admin
 SUPABASE_URL=https://service.check-cx.org
 SUPABASE_PUBLISHABLE_OR_ANON_KEY=你的_anon_key
 SUPABASE_SERVICE_ROLE_KEY=你的_service_role_key
+SUPABASE_DB_SCHEMA=public
 APP_URL=https://admin.example.com
 SUPABASE_OAUTH_PROVIDERS=google,github
 ADMIN_EMAILS=admin@example.com
@@ -114,6 +121,16 @@ https://admin.example.com/auth/callback
 ```text
 http://localhost:3000/auth/callback
 ```
+
+### 单库 dev 调试
+
+如果正式和调试共用同一个 Supabase 项目，可以把后台切到 `dev` schema：
+
+```env
+SUPABASE_DB_SCHEMA=dev
+```
+
+前提是上游数据库已经存在 `dev.check_configs`、`dev.group_info`、`dev.admin_users` 等对象。当前后台头部会显示 `schema: dev` 或 `schema: public`，避免你调错空间。
 
 ### 4. 写入生产 compose
 
@@ -199,6 +216,7 @@ git push origin v0.1.0
 - `/dashboard/notifications`：系统通知
 - `/dashboard/history`：检测历史
 - `/dashboard/system`：运行状态
+- `/dashboard/users`：邀请用户目录
 
 ## 数据权限建议
 

@@ -12,7 +12,9 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { requireAppUser } from "@/lib/admin/auth"
 import { listConfigs, listModels, listTemplates } from "@/lib/admin/queries"
+import { isAdminUser } from "@/lib/admin/permissions"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 import { ConfigsTable } from "./configs-table"
@@ -28,6 +30,7 @@ export default async function ConfigsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const user = await requireAppUser()
   const params = await searchParams
   const success = getParam(params.success)
   const error = getParam(params.error)
@@ -46,7 +49,11 @@ export default async function ConfigsPage({
     )
   }
 
-  const [configs, templates, models] = await Promise.all([listConfigs(), listTemplates(), listModels()])
+  const [configs, templates, models] = await Promise.all([
+    listConfigs(user),
+    listTemplates(),
+    listModels(),
+  ])
   const groupNames = Array.from(
     new Set(
       configs
@@ -137,7 +144,11 @@ export default async function ConfigsPage({
     <div className="space-y-6">
       <PageHeader
         title="Provider 配置"
-        description="管理真正参与检测的实例。默认优先停用，不要手滑删除。"
+        description={
+          isAdminUser(user)
+            ? "管理真正参与检测的实例。默认优先停用，不要手滑删除。"
+            : `这里只能维护分组「${user.groupName}」下的配置。`
+        }
         actions={
           <Button render={<Link href="/dashboard/configs/new" />}>
             <PlusIcon />
@@ -177,14 +188,18 @@ export default async function ConfigsPage({
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">分组</span>
-              <select name="group_name" defaultValue={groupName} className={selectClassName}>
-                <option value="">全部</option>
-                {groupNames.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+              {isAdminUser(user) ? (
+                <select name="group_name" defaultValue={groupName} className={selectClassName}>
+                  <option value="">全部</option>
+                  {groupNames.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input value={user.groupName ?? ""} disabled />
+              )}
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">模板</span>

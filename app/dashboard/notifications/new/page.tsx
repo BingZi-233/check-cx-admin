@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 function getParam(value: string | string[] | undefined) {
@@ -24,6 +25,7 @@ export default async function NewNotificationPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const params = await searchParams
   const error = getParam(params.error)
 

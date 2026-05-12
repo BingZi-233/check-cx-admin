@@ -6,6 +6,20 @@ function readServerEnv(name: string) {
   return process.env[name]?.trim() ?? ""
 }
 
+function normalizeSchemaName(value: string) {
+  const schema = value.trim()
+
+  if (!schema) {
+    return "public"
+  }
+
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(schema)) {
+    throw new Error("SUPABASE_DB_SCHEMA 非法，只允许字母、数字和下划线，且不能以数字开头")
+  }
+
+  return schema
+}
+
 export function getServerEnv() {
   const authEnv = getAuthEnv()
 
@@ -13,6 +27,7 @@ export function getServerEnv() {
     supabaseUrl: authEnv.supabaseUrl,
     publicSupabaseKey: authEnv.supabaseKey,
     serviceRoleKey: readServerEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    dbSchema: normalizeSchemaName(readServerEnv("SUPABASE_DB_SCHEMA")),
     adminEmails: readServerEnv("ADMIN_EMAILS")
       .split(",")
       .map((item) => item.trim().toLowerCase())
@@ -32,14 +47,30 @@ export function getServiceRoleKey() {
   return getServerEnv().serviceRoleKey
 }
 
+export function getAdminDatabaseSchema() {
+  return getServerEnv().dbSchema
+}
+
 export function hasAdminDatabaseEnv() {
-  const env = getServerEnv()
-  return Boolean(env.supabaseUrl && env.serviceRoleKey)
+  try {
+    const env = getServerEnv()
+    return Boolean(env.supabaseUrl && env.serviceRoleKey)
+  } catch {
+    return false
+  }
 }
 
 export function getAdminDatabaseWarnings() {
   const warnings: string[] = []
-  const env = getServerEnv()
+  let env: ReturnType<typeof getServerEnv> | null = null
+
+  try {
+    env = getServerEnv()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "SUPABASE_DB_SCHEMA 配置非法"
+    warnings.push(message)
+    return warnings
+  }
 
   if (!env.supabaseUrl) {
     warnings.push("缺少 SUPABASE_URL")

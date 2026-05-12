@@ -35,6 +35,8 @@ export function NavUser({
     name: string
     email: string
     avatar?: string | null
+    role?: "admin" | "member"
+    groupName?: string | null
   }
 }) {
   const { isMobile } = useSidebar()
@@ -74,6 +76,13 @@ export function NavUser({
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
                     <span className="truncate text-xs">{user.email}</span>
+                    {user.role ? (
+                      <span className="truncate text-[11px] text-muted-foreground">
+                        {user.role === "admin"
+                          ? "管理员 / 全部配置"
+                          : `成员 / ${user.groupName ?? "未分组"}`}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </DropdownMenuLabel>

@@ -8,19 +8,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { requireAppUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
+import { isAdminUser } from "@/lib/admin/permissions"
 import { getPollerLease, listAvailabilityStats, listConfigs } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 export default async function SystemPage() {
+  const user = await requireAppUser()
   if (!hasAdminDatabaseEnv()) {
     return <PageHeader title="运行状态" description="缺少 service role，这页不会工作。" />
   }
 
   const [lease, stats, configs] = await Promise.all([
     getPollerLease(),
-    listAvailabilityStats(),
-    listConfigs(),
+    listAvailabilityStats(user),
+    listConfigs(user),
   ])
 
   const statMap = new Map<string, Map<string, number | null>>()
@@ -37,7 +40,11 @@ export default async function SystemPage() {
     <div className="space-y-6">
       <PageHeader
         title="运行状态"
-        description="只看关键运行信息：租约和可用性。别给自己造一个没人维护的 NOC。"
+        description={
+          isAdminUser(user)
+            ? "只看关键运行信息：租约和可用性。别给自己造一个没人维护的 NOC。"
+            : `这里只展示分组「${user.groupName}」的配置可用性。`
+        }
       />
       <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
         <Card>

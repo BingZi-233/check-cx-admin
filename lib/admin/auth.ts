@@ -3,8 +3,9 @@ import "server-only"
 import { redirect } from "next/navigation"
 
 import { hasSupabaseAuthEnv } from "@/lib/admin/env"
-import { isAllowedAdminEmail } from "@/lib/admin/server-env"
-import { AdminUser } from "@/lib/admin/types"
+import { hasAdminDatabaseEnv, isAllowedAdminEmail } from "@/lib/admin/server-env"
+import { AdminDirectoryUserRecord, AdminUser, AppUser } from "@/lib/admin/types"
+import { createAdminClient } from "@/lib/admin/supabase-admin"
 import { createClient } from "@/lib/supabase/server"
 
 function toAdminUser(user: {
@@ -33,7 +34,94 @@ function toAdminUser(user: {
   } satisfies AdminUser
 }
 
-export async function getOptionalAdminUser() {
+type AuthIdentity = {
+  id: string
+  email?: string | null
+  user_metadata?: Record<string, unknown>
+}
+
+function normalizeEmail(email?: string | null) {
+  return (email ?? "").trim().toLowerCase()
+}
+
+async function updateDirectoryActivation(id: string, authUserId: string, activatedAt: string | null) {
+  const payload: Partial<AdminDirectoryUserRecord> = {}
+
+  if (authUserId) {
+    payload.auth_user_id = authUserId
+  }
+
+  if (!activatedAt) {
+    payload.activated_at = new Date().toISOString()
+  }
+
+  if (Object.keys(payload).length === 0) {
+    return
+  }
+
+  const client = createAdminClient()
+  const { error } = await client.from("admin_users").update(payload).eq("id", id)
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function resolveAppUserFromIdentity(user: AuthIdentity): Promise<AppUser | null> {
+  const base = toAdminUser(user)
+  const email = normalizeEmail(user.email)
+
+  if (!email) {
+    return null
+  }
+
+  if (isAllowedAdminEmail(email)) {
+    return {
+      ...base,
+      role: "admin",
+      groupName: null,
+      directoryUserId: null,
+      isBootstrapAdmin: true,
+    }
+  }
+
+  if (!hasAdminDatabaseEnv()) {
+    return null
+  }
+
+  const client = createAdminClient()
+  const { data, error } = await client
+    .from("admin_users")
+    .select("id, email, role, group_name, auth_user_id, invited_by, is_active, invited_at, activated_at, created_at, updated_at")
+    .eq("email", email)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data || data.is_active === false) {
+    return null
+  }
+
+  const groupName = data.group_name?.trim() || null
+
+  if (data.role === "member" && !groupName) {
+    return null
+  }
+
+  await updateDirectoryActivation(data.id, user.id, data.activated_at)
+
+  return {
+    ...base,
+    role: data.role,
+    groupName,
+    directoryUserId: data.id,
+    isBootstrapAdmin: false,
+  }
+}
+
+export async function getOptionalAppUser() {
   if (!hasSupabaseAuthEnv()) {
     return null
   }
@@ -43,11 +131,31 @@ export async function getOptionalAdminUser() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user || !isAllowedAdminEmail(user.email)) {
+  if (!user) {
     return null
   }
 
-  return toAdminUser(user)
+  return resolveAppUserFromIdentity(user)
+}
+
+export async function requireAppUser() {
+  const user = await getOptionalAppUser()
+
+  if (!user) {
+    redirect("/login")
+  }
+
+  return user
+}
+
+export async function getOptionalAdminUser() {
+  const user = await getOptionalAppUser()
+
+  if (!user || user.role !== "admin") {
+    return null
+  }
+
+  return user
 }
 
 export async function requireAdminUser() {

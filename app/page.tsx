@@ -2,10 +2,10 @@ export const dynamic = "force-dynamic"
 
 import { redirect } from "next/navigation"
 
-import { getOptionalAdminUser } from "@/lib/admin/auth"
+import { getOptionalAppUser } from "@/lib/admin/auth"
 
 export default async function Page() {
-  const user = await getOptionalAdminUser()
+  const user = await getOptionalAppUser()
 
   redirect(user ? "/dashboard" : "/login")
 }

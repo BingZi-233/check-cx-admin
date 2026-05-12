@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
+import { resolveAppUserFromIdentity } from "@/lib/admin/auth"
 import { getRequestOrigin, sanitizeRedirectPath } from "@/lib/admin/env"
-import { isAllowedAdminEmail } from "@/lib/admin/server-env"
 import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: Request) {
@@ -21,7 +21,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/login?error=oauth", origin))
   }
 
-  if (!isAllowedAdminEmail(data.user?.email)) {
+  const appUser = data.user ? await resolveAppUserFromIdentity(data.user) : null
+
+  if (!appUser) {
     await supabase.auth.signOut()
     return NextResponse.redirect(new URL("/login?error=forbidden", origin))
   }

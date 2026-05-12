@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 const selectClassName = "flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
@@ -16,6 +17,7 @@ export default async function NewTemplatePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const params = await searchParams
   const error = Array.isArray(params.error) ? params.error[0] : params.error
 

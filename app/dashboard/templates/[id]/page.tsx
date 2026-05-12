@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
 import { stringifyJson } from "@/lib/admin/json"
 import { getTemplateById } from "@/lib/admin/queries"
@@ -31,6 +32,7 @@ export default async function EditTemplatePage({
   params: Promise<{ id: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const { id } = await params
   const query = await searchParams
   const error = getParam(query.error)

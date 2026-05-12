@@ -8,22 +8,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { requireAppUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
+import { isAdminUser } from "@/lib/admin/permissions"
 import { listRecentHistory } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 export default async function HistoryPage() {
+  const user = await requireAppUser()
   if (!hasAdminDatabaseEnv()) {
     return <PageHeader title="历史记录" description="缺少 service role，这页不会工作。" />
   }
 
-  const history = await listRecentHistory(200)
+  const history = await listRecentHistory(user, 200)
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="历史记录"
-        description="只读页面。先看问题分布，不要急着做花哨图表。"
+        description={
+          isAdminUser(user)
+            ? "只读页面。先看问题分布，不要急着做花哨图表。"
+            : `只展示分组「${user.groupName}」下配置的历史结果。`
+        }
       />
       <Card>
         <CardHeader>

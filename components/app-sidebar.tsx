@@ -11,6 +11,7 @@ import {
   Layers3Icon,
   ServerCogIcon,
   TerminalIcon,
+  UserPlusIcon,
   WaypointsIcon,
 } from "lucide-react"
 
@@ -31,10 +32,11 @@ import {
 const mainItems = [
   { title: "概览", url: "/dashboard", icon: GaugeIcon },
   { title: "Provider 配置", url: "/dashboard/configs", icon: ServerCogIcon },
-  { title: "模型配置", url: "/dashboard/models", icon: Layers3Icon },
-  { title: "请求模板", url: "/dashboard/templates", icon: LayoutTemplateIcon },
-  { title: "分组信息", url: "/dashboard/groups", icon: FolderTreeIcon },
-  { title: "系统通知", url: "/dashboard/notifications", icon: BellIcon },
+  { title: "模型配置", url: "/dashboard/models", icon: Layers3Icon, adminOnly: true },
+  { title: "请求模板", url: "/dashboard/templates", icon: LayoutTemplateIcon, adminOnly: true },
+  { title: "分组信息", url: "/dashboard/groups", icon: FolderTreeIcon, adminOnly: true },
+  { title: "系统通知", url: "/dashboard/notifications", icon: BellIcon, adminOnly: true },
+  { title: "邀请用户", url: "/dashboard/users", icon: UserPlusIcon, adminOnly: true },
   { title: "历史记录", url: "/dashboard/history", icon: HistoryIcon },
   { title: "运行状态", url: "/dashboard/system", icon: WaypointsIcon },
 ]
@@ -47,6 +49,8 @@ export function AppSidebar({
     name: string
     email: string
     avatar?: string | null
+    role: "admin" | "member"
+    groupName?: string | null
   }
 }) {
   const pathname = usePathname()
@@ -73,7 +77,9 @@ export function AppSidebar({
           <SidebarGroupLabel>管理台</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => {
+              {mainItems
+                .filter((item) => !item.adminOnly || user.role === "admin")
+                .map((item) => {
                 const isActive =
                   item.url === "/dashboard"
                     ? pathname === item.url

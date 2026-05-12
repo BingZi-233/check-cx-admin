@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { formatDateTime, splitTags } from "@/lib/admin/format"
 import { listGroups } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
@@ -24,6 +25,7 @@ export default async function GroupsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const params = await searchParams
   const error = getParam(params.error)
   const success = getParam(params.success)

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { hasSupabaseAuthEnv, sanitizeRedirectPath } from "@/lib/admin/env"
-import { isAllowedAdminEmail } from "@/lib/admin/server-env"
+import { resolveAppUserFromIdentity } from "@/lib/admin/auth"
 import { createClient } from "@/lib/supabase/server"
 
 function redirectTo(path: string, origin: string) {
@@ -33,7 +33,9 @@ export async function POST(request: Request) {
     return redirectTo("/login?error=invalid-credentials", url.origin)
   }
 
-  if (!isAllowedAdminEmail(data.user.email)) {
+  const appUser = await resolveAppUserFromIdentity(data.user)
+
+  if (!appUser) {
     await supabase.auth.signOut()
     return redirectTo("/login?error=forbidden", url.origin)
   }

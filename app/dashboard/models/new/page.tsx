@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { listTemplates } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
@@ -15,6 +16,7 @@ export default async function NewModelPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const params = await searchParams
   const error = Array.isArray(params.error) ? params.error[0] : params.error
 

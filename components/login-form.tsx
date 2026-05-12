@@ -1,7 +1,8 @@
 import { GithubIcon, LogInIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button-variants"
 import {
   Card,
   CardContent,
@@ -123,7 +124,7 @@ export function LoginForm({
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        后台默认允许任意登录用户访问；如需收紧权限，请设置 `ADMIN_EMAILS`。
+        后台只允许受邀用户登录；`ADMIN_EMAILS` 只建议保留给管理员 bootstrap 兜底。
       </FieldDescription>
     </div>
   )

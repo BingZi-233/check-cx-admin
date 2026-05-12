@@ -5,13 +5,13 @@ import { ShieldCheckIcon } from "lucide-react"
 
 import { Notice } from "@/components/admin/notice"
 import { LoginForm } from "@/components/login-form"
-import { getOptionalAdminUser } from "@/lib/admin/auth"
+import { getOptionalAppUser } from "@/lib/admin/auth"
 import { getOAuthProviders, getSupabaseAuthWarnings, hasSupabaseAuthEnv } from "@/lib/admin/env"
 
 function resolveErrorMessage(code?: string) {
   switch (code) {
     case "forbidden":
-      return "这个账号不在 ADMIN_EMAILS 白名单里。"
+      return "这个账号没有后台邀请记录，也不在管理员兜底名单里。"
     case "oauth":
       return "OAuth 回调失败，请检查 Supabase 提供商配置。"
     case "invalid-credentials":
@@ -30,7 +30,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const user = await getOptionalAdminUser()
+  const user = await getOptionalAppUser()
 
   if (user) {
     redirect("/dashboard")

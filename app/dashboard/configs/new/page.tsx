@@ -6,7 +6,9 @@ import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { requireAppUser } from "@/lib/admin/auth"
 import { getConfigById, listGroups, listModels } from "@/lib/admin/queries"
+import { isAdminUser } from "@/lib/admin/permissions"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 import { createConfigAction } from "@/app/dashboard/configs/actions"
 
@@ -19,6 +21,7 @@ export default async function NewConfigPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const user = await requireAppUser()
   const params = await searchParams
   const error = getParam(params.error)
   const sourceId = getParam(params.source)
@@ -30,7 +33,7 @@ export default async function NewConfigPage({
   const [groups, models, sourceConfig] = await Promise.all([
     listGroups(),
     listModels(),
-    sourceId ? getConfigById(sourceId) : Promise.resolve(null),
+    sourceId ? getConfigById(sourceId, user) : Promise.resolve(null),
   ])
 
   const groupNames = Array.from(new Set(groups.map((item) => item.group_name).filter(Boolean))).sort(
@@ -73,15 +76,22 @@ export default async function NewConfigPage({
             />
             <label className="space-y-2">
               <span className="text-sm font-medium">分组名称</span>
-              <select name="group_name" defaultValue={sourceGroupName} className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30">
-                <option value="">不设置分组</option>
-                {!hasSourceGroup && sourceGroupName ? (
-                  <option value={sourceGroupName}>{sourceGroupName}（当前未在分组表中）</option>
-                ) : null}
-                {groupNames.map((groupName) => (
-                  <option key={groupName} value={groupName}>{groupName}</option>
-                ))}
-              </select>
+              {isAdminUser(user) ? (
+                <select name="group_name" defaultValue={sourceGroupName} className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30">
+                  <option value="">不设置分组</option>
+                  {!hasSourceGroup && sourceGroupName ? (
+                    <option value={sourceGroupName}>{sourceGroupName}（当前未在分组表中）</option>
+                  ) : null}
+                  {groupNames.map((groupName) => (
+                    <option key={groupName} value={groupName}>{groupName}</option>
+                  ))}
+                </select>
+              ) : (
+                <>
+                  <Input value={user.groupName ?? ""} disabled />
+                  <input type="hidden" name="group_name" value={user.groupName ?? ""} />
+                </>
+              )}
             </label>
             <label className="space-y-2 md:col-span-2">
               <span className="text-sm font-medium">API 端点</span>

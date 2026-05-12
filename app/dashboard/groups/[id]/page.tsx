@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { requireAdminUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
 import { getGroupById } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
@@ -29,6 +30,7 @@ export default async function EditGroupPage({
   params: Promise<{ id: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  await requireAdminUser()
   const { id } = await params
   const query = await searchParams
   const error = getParam(query.error)

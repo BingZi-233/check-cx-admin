@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { requireAppUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
+import { isAdminUser } from "@/lib/admin/permissions"
 import { getConfigById, listModels } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
@@ -30,6 +32,7 @@ export default async function EditConfigPage({
   params: Promise<{ id: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const user = await requireAppUser()
   const { id } = await params
   const query = await searchParams
   const error = getParam(query.error)
@@ -39,7 +42,7 @@ export default async function EditConfigPage({
     return <PageHeader title="编辑配置" description="缺少 service role，这页不会工作。" />
   }
 
-  const [config, models] = await Promise.all([getConfigById(id), listModels()])
+  const [config, models] = await Promise.all([getConfigById(id, user), listModels()])
 
   if (!config) {
     notFound()
@@ -79,7 +82,14 @@ export default async function EditConfigPage({
             />
             <div className="space-y-2">
               <Label htmlFor="group_name">分组名</Label>
-              <Input id="group_name" name="group_name" defaultValue={config.group_name ?? ""} />
+              {isAdminUser(user) ? (
+                <Input id="group_name" name="group_name" defaultValue={config.group_name ?? ""} />
+              ) : (
+                <>
+                  <Input id="group_name" value={config.group_name ?? user.groupName ?? ""} disabled />
+                  <input type="hidden" name="group_name" value={config.group_name ?? user.groupName ?? ""} />
+                </>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="endpoint">接口地址</Label>
