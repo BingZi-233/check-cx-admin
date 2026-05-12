@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { requireAppUser } from "@/lib/admin/auth"
 import { nativeSelectClassName } from "@/lib/admin/forms"
-import { listConfigs, listModels, listTemplates } from "@/lib/admin/queries"
+import { listConfigs, listSelectableModels, listTemplates } from "@/lib/admin/queries"
 import { isAdminUser } from "@/lib/admin/permissions"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
@@ -52,7 +52,7 @@ export default async function ConfigsPage({
   const [configs, templates, models] = await Promise.all([
     listConfigs(user),
     listTemplates(user),
-    listModels(user),
+    listSelectableModels(),
   ])
   const groupNames = Array.from(
     new Set(

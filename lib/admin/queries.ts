@@ -320,6 +320,43 @@ export async function listModels(user?: AppUser) {
   }))
 }
 
+export async function listSelectableModels() {
+  const client = createAdminClient()
+  const [{ data, error }, configs] = await Promise.all([
+    client
+      .from("check_models")
+      .select("*, check_request_templates(name)")
+      .order("updated_at", { ascending: false }),
+    client.from("check_configs").select("model_id"),
+  ])
+
+  if (error) {
+    throw error
+  }
+
+  if (configs.error) {
+    throw configs.error
+  }
+
+  const countMap = new Map<string, number>()
+  for (const item of configs.data ?? []) {
+    const current = countMap.get(item.model_id) ?? 0
+    countMap.set(item.model_id, current + 1)
+  }
+
+  return ((data ?? []) as Array<
+    Omit<CheckModelRecord, "template_name"> & {
+      check_request_templates?: { name: string } | Array<{ name: string }> | null
+    }
+  >).map((item) => ({
+    ...item,
+    template_name: Array.isArray(item.check_request_templates)
+      ? (item.check_request_templates[0]?.name ?? null)
+      : (item.check_request_templates?.name ?? null),
+    config_count: countMap.get(item.id) ?? 0,
+  }))
+}
+
 export async function listModelsByType(type: CheckModelRecord["type"]) {
   const client = createAdminClient()
   const { data, error } = await client

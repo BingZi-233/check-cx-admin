@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import { requireAppUser } from "@/lib/admin/auth"
 import { requiredString, optionalString, booleanFromForm, parseProviderType, withMessage } from "@/lib/admin/forms"
 import { getRequiredGroupName, isAdminUser } from "@/lib/admin/permissions"
-import { listModels } from "@/lib/admin/queries"
+import { listSelectableModels } from "@/lib/admin/queries"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 import type { AppUser, ProviderType } from "@/lib/admin/types"
 
@@ -178,9 +178,9 @@ async function parseConfigPayload(formData: FormData, user: AppUser) {
   }
 
   if (!isAdminUser(user)) {
-    const scopedModels = await listModels(user)
+    const selectableModels = await listSelectableModels()
 
-    if (!scopedModels.some((item) => item.id === modelId)) {
+    if (!selectableModels.some((item) => item.id === modelId)) {
       throw new Error("所选模型不在当前成员可用范围内")
     }
   }
@@ -407,9 +407,9 @@ export async function batchConfigAction(formData: FormData) {
         }
 
         if (!isAdminUser(user)) {
-          const scopedModels = await listModels(user)
+          const selectableModels = await listSelectableModels()
 
-          if (!scopedModels.some((item) => item.id === targetModelId)) {
+          if (!selectableModels.some((item) => item.id === targetModelId)) {
             throw new Error("目标模型不在当前成员可用范围内")
           }
         }

@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label"
 import { requireAppUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
 import { isAdminUser } from "@/lib/admin/permissions"
-import { getConfigById, listModels } from "@/lib/admin/queries"
+import { getConfigById, listSelectableModels } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 function getParam(value: string | string[] | undefined) {
@@ -43,7 +43,7 @@ export default async function EditConfigPage({
     return <PageHeader title="编辑配置" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
-  const [config, models] = await Promise.all([getConfigById(id, user), listModels(user)])
+  const [config, models] = await Promise.all([getConfigById(id, user), listSelectableModels()])
 
   if (!config) {
     notFound()

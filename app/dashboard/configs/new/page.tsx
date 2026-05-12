@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { requireAppUser } from "@/lib/admin/auth"
 import { nativeSelectClassName } from "@/lib/admin/forms"
-import { getConfigById, listGroups, listModels } from "@/lib/admin/queries"
+import { getConfigById, listGroups, listSelectableModels } from "@/lib/admin/queries"
 import { isAdminUser } from "@/lib/admin/permissions"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 import { createConfigAction } from "@/app/dashboard/configs/actions"
@@ -34,7 +34,7 @@ export default async function NewConfigPage({
 
   const [groups, models, sourceConfig] = await Promise.all([
     adminUser ? listGroups() : Promise.resolve([]),
-    listModels(user),
+    listSelectableModels(),
     sourceId ? getConfigById(sourceId, user) : Promise.resolve(null),
   ])
 
