@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { getRequestOrigin } from "@/lib/admin/env"
 import { createClient } from "@/lib/supabase/server"
 
 function redirectToLogin(origin: string) {
@@ -7,12 +8,12 @@ function redirectToLogin(origin: string) {
 }
 
 async function handleSignOut(request: Request) {
-  const url = new URL(request.url)
+  const origin = getRequestOrigin(request)
   const supabase = await createClient()
 
   await supabase.auth.signOut()
 
-  return redirectToLogin(url.origin)
+  return redirectToLogin(origin)
 }
 
 export async function GET(request: Request) {
