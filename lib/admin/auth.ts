@@ -37,11 +37,24 @@ function toAdminUser(user: {
 type AuthIdentity = {
   id: string
   email?: string | null
+  app_metadata?: Record<string, unknown>
   user_metadata?: Record<string, unknown>
 }
 
 function normalizeEmail(email?: string | null) {
   return (email ?? "").trim().toLowerCase()
+}
+
+function isGitHubIdentity(user: AuthIdentity) {
+  const provider =
+    typeof user.app_metadata?.provider === "string"
+      ? user.app_metadata.provider
+      : ""
+  const providers = Array.isArray(user.app_metadata?.providers)
+    ? user.app_metadata.providers.filter((item): item is string => typeof item === "string")
+    : []
+
+  return provider === "github" || providers.includes("github")
 }
 
 async function updateDirectoryActivation(id: string, authUserId: string, activatedAt: string | null) {
@@ -71,7 +84,7 @@ export async function resolveAppUserFromIdentity(user: AuthIdentity): Promise<Ap
   const base = toAdminUser(user)
   const email = normalizeEmail(user.email)
 
-  if (!email) {
+  if (!email || !isGitHubIdentity(user)) {
     return null
   }
 

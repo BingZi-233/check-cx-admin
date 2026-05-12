@@ -11,7 +11,7 @@
 - `check_configs`：Provider 配置
 - `check_request_templates`：请求模板
 - `group_info`：分组信息
-- `admin_users`：后台邀请用户目录
+- `admin_users`：后台 GitHub 允许用户目录
 - `system_notifications`：系统通知
 - `check_history`：检测历史（只读）
 - `check_poller_leases`：轮询主节点状态（只读）
@@ -47,18 +47,17 @@ pnpm dev
 
 - `SUPABASE_DB_SCHEMA`：后台数据库 schema，默认 `public`；单库调试时可设为 `dev`
 - `APP_URL`：后台对外访问地址；在反向代理或 Docker 生产环境中，建议显式设置，例如 `https://admin.example.com`
-- `SUPABASE_OAUTH_PROVIDERS`：默认 `google,github`
-- `ADMIN_EMAILS`：逗号分隔的管理员兜底邮箱；仅建议用于 bootstrap 管理员，普通成员应通过 `admin_users` 邀请目录进入后台
+- `SUPABASE_OAUTH_PROVIDERS`：默认 `github`；当前后台只接受 GitHub OAuth
+- `ADMIN_EMAILS`：逗号分隔的 bootstrap 管理员 GitHub 邮箱；仅用于首个管理员兜底，不配置时不会自动放行任何人
 
 ## 认证说明
 
-- 登录页默认优先使用 OAuth。
-- 邮箱密码登录保留为初始化与兜底方案。
+- 登录页只接受 GitHub OAuth。
 - 登录、OAuth 发起、回调及登出流程均由服务端处理。
 - `/dashboard/**` 路由受 Supabase 会话保护。
-- 后台默认是邀请制：普通用户必须先写入 `admin_users`，并预设其 `group_name`。
-- 管理员可以通过 `/dashboard/users` 维护邀请目录并发送邀请邮件。
-- 如果命中 `ADMIN_EMAILS`，该账号会被当作 bootstrap 管理员处理；这只是兜底方案，不建议代替邀请目录长期使用。
+- 后台默认是允许名单制：普通用户必须先把 GitHub 登录邮箱写入 `admin_users`，并预设其 `group_name`。
+- 管理员可以通过 `/dashboard/users` 维护允许名单；对方首次使用 GitHub 登录后会自动绑定 `auth_user_id`。
+- 如果命中 `ADMIN_EMAILS`，且该 GitHub 邮箱被用来登录，该账号会被当作 bootstrap 管理员处理；这只是兜底方案，不建议代替允许名单长期使用。
 - 普通成员登录后只能查看和维护自己 `group_name` 下的配置；管理员可以查看全部配置。
 - 后台所有数据库读写都走 `SUPABASE_DB_SCHEMA` 指定的 schema；未设置时默认使用 `public`。
 - 项目认证配置在服务端运行时读取，便于在 Docker 等部署环境中通过环境变量覆盖。
@@ -104,7 +103,7 @@ SUPABASE_PUBLISHABLE_OR_ANON_KEY=你的_anon_key
 SUPABASE_SERVICE_ROLE_KEY=你的_service_role_key
 SUPABASE_DB_SCHEMA=public
 APP_URL=https://admin.example.com
-SUPABASE_OAUTH_PROVIDERS=google,github
+SUPABASE_OAUTH_PROVIDERS=github
 ADMIN_EMAILS=admin@example.com
 ```
 
@@ -216,7 +215,7 @@ git push origin v0.1.0
 - `/dashboard/notifications`：系统通知
 - `/dashboard/history`：检测历史
 - `/dashboard/system`：运行状态
-- `/dashboard/users`：邀请用户目录
+- `/dashboard/users`：GitHub 允许用户目录
 
 ## 数据权限建议
 

@@ -11,15 +11,13 @@ import { getOAuthProviders, getSupabaseAuthWarnings, hasSupabaseAuthEnv } from "
 function resolveErrorMessage(code?: string) {
   switch (code) {
     case "forbidden":
-      return "这个账号没有后台邀请记录，也不在管理员兜底名单里。"
+      return "这个 GitHub 账号不在允许名单里，或者登录邮箱和后台登记的 GitHub 邮箱不一致。"
     case "oauth":
-      return "OAuth 回调失败，请检查 Supabase 提供商配置。"
-    case "invalid-credentials":
-      return "邮箱或密码不正确。"
+      return "GitHub OAuth 回调失败，请检查 Supabase GitHub 提供商配置。"
     case "missing-env":
       return "Supabase 环境变量未配置，登录流程无法启动。"
     case "provider":
-      return "OAuth 提供商未启用或配置错误。"
+      return "当前后台只允许 GitHub 登录。"
     default:
       return undefined
   }

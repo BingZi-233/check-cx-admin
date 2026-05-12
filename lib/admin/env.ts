@@ -1,6 +1,6 @@
 import "server-only"
 
-const DEFAULT_OAUTH_PROVIDERS = ["google", "github"] as const
+const SUPPORTED_OAUTH_PROVIDERS = ["github"] as const
 
 function readEnv(name: string) {
   return process.env[name]?.trim() ?? ""
@@ -31,15 +31,18 @@ export function getAuthEnv() {
     ? oauthProvidersRaw
         .split(",")
         .map((item) => item.trim().toLowerCase())
-        .filter(Boolean)
-    : [...DEFAULT_OAUTH_PROVIDERS]
+        .filter(
+          (item): item is (typeof SUPPORTED_OAUTH_PROVIDERS)[number] =>
+            SUPPORTED_OAUTH_PROVIDERS.includes(item as (typeof SUPPORTED_OAUTH_PROVIDERS)[number])
+        )
+    : [...SUPPORTED_OAUTH_PROVIDERS]
 
   return {
     supabaseUrl,
     supabaseKey,
     appUrl,
     oauthProviders:
-      oauthProviders.length > 0 ? oauthProviders : [...DEFAULT_OAUTH_PROVIDERS],
+      oauthProviders.length > 0 ? oauthProviders : [...SUPPORTED_OAUTH_PROVIDERS],
   }
 }
 
@@ -84,7 +87,8 @@ export function isSupportedOAuthProvider(provider?: string | null) {
     return false
   }
 
-  return getOAuthProviders().includes(provider.trim().toLowerCase())
+  const normalized = provider.trim().toLowerCase()
+  return getOAuthProviders().some((item) => item === normalized)
 }
 
 export function getRequestOrigin(request: Request) {

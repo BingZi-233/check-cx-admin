@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { hasSupabaseAuthEnv, sanitizeRedirectPath } from "@/lib/admin/env"
-import { resolveAppUserFromIdentity } from "@/lib/admin/auth"
-import { createClient } from "@/lib/supabase/server"
+import { sanitizeRedirectPath } from "@/lib/admin/env"
 
 function redirectTo(path: string, origin: string) {
   return NextResponse.redirect(new URL(path, origin), 303)
@@ -11,34 +9,6 @@ function redirectTo(path: string, origin: string) {
 export async function POST(request: Request) {
   const url = new URL(request.url)
   const formData = await request.formData()
-  const email = String(formData.get("email") ?? "").trim()
-  const password = String(formData.get("password") ?? "")
-  const next = sanitizeRedirectPath(String(formData.get("next") ?? "/dashboard"))
-
-  if (!hasSupabaseAuthEnv()) {
-    return redirectTo("/login?error=missing-env", url.origin)
-  }
-
-  if (!email || !password) {
-    return redirectTo("/login?error=invalid-credentials", url.origin)
-  }
-
-  const supabase = await createClient()
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error || !data.user) {
-    return redirectTo("/login?error=invalid-credentials", url.origin)
-  }
-
-  const appUser = await resolveAppUserFromIdentity(data.user)
-
-  if (!appUser) {
-    await supabase.auth.signOut()
-    return redirectTo("/login?error=forbidden", url.origin)
-  }
-
-  return redirectTo(next, url.origin)
+  sanitizeRedirectPath(String(formData.get("next") ?? "/dashboard"))
+  return redirectTo("/login?error=provider", url.origin)
 }

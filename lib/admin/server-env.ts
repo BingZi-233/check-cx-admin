@@ -91,7 +91,7 @@ export function isAllowedAdminEmail(email?: string | null) {
   const admins = getAdminEmails()
 
   if (admins.length === 0) {
-    return true
+    return false
   }
 
   return admins.includes((email ?? "").toLowerCase())

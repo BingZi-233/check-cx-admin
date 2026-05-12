@@ -36,7 +36,7 @@ const mainItems = [
   { title: "请求模板", url: "/dashboard/templates", icon: LayoutTemplateIcon, adminOnly: true },
   { title: "分组信息", url: "/dashboard/groups", icon: FolderTreeIcon, adminOnly: true },
   { title: "系统通知", url: "/dashboard/notifications", icon: BellIcon, adminOnly: true },
-  { title: "邀请用户", url: "/dashboard/users", icon: UserPlusIcon, adminOnly: true },
+  { title: "允许用户", url: "/dashboard/users", icon: UserPlusIcon, adminOnly: true },
   { title: "历史记录", url: "/dashboard/history", icon: HistoryIcon },
   { title: "运行状态", url: "/dashboard/system", icon: WaypointsIcon },
 ]

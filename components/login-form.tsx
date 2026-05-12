@@ -15,9 +15,7 @@ import {
   FieldDescription,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 
 function providerLabel(provider: string) {
   switch (provider) {
@@ -59,12 +57,11 @@ export function LoginForm({
         <CardHeader className="text-center">
           <CardTitle className="text-xl">登录后台</CardTitle>
           <CardDescription>
-            优先使用 OAuth，密码登录保留给初始化和兜底。
+            只接受允许名单中的 GitHub 邮箱登录。
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action="/auth/sign-in/password" method="post">
-            <input type="hidden" name="next" value={nextPath} />
+          <div>
             <FieldGroup>
               <Field>
                 {providers.map((provider) => {
@@ -87,44 +84,23 @@ export function LoginForm({
                   )
                 })}
               </Field>
-              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                或使用邮箱密码
-              </FieldSeparator>
               <Field>
-                <FieldLabel htmlFor="email">邮箱</FieldLabel>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  required
-                />
-              </Field>
-              <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">密码</FieldLabel>
-                </div>
-                <Input id="password" name="password" type="password" required />
+                <FieldLabel>登录要求</FieldLabel>
+                <FieldDescription className="text-center">
+                  先把对方的 GitHub 登录邮箱写进允许名单，首次登录后会自动绑定账号并跳转到控制台。
+                </FieldDescription>
               </Field>
               {errorMessage ? (
                 <FieldDescription className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-destructive">
                   {errorMessage}
                 </FieldDescription>
               ) : null}
-              <Field>
-                <Button type="submit" disabled={!authEnvReady}>
-                  登录
-                </Button>
-                <FieldDescription className="text-center">
-                  登录成功后会自动跳转到管理控制台。
-                </FieldDescription>
-              </Field>
             </FieldGroup>
-          </form>
+          </div>
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        后台只允许受邀用户登录；`ADMIN_EMAILS` 只建议保留给管理员 bootstrap 兜底。
+        后台只允许允许名单中的 GitHub 用户登录；`ADMIN_EMAILS` 只建议保留给 bootstrap 管理员兜底。
       </FieldDescription>
     </div>
   )
