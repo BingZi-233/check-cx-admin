@@ -34,7 +34,7 @@ export default async function NotificationsPage({
   const success = getParam(params.success)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="系统通知" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="系统通知" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const notifications = await listNotifications()
@@ -43,7 +43,7 @@ export default async function NotificationsPage({
     <div className="space-y-6">
       <PageHeader
         title="系统通知"
-        description="前台横幅内容都在这里。别让运营去改代码。"
+        description="维护前台横幅通知内容和显示状态。"
         actions={
           <Button render={<Link href="/dashboard/notifications/new" />}>
             新增通知

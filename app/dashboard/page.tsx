@@ -30,17 +30,17 @@ const quickLinks = [
   },
   {
     title: "模型配置",
-    description: "统一维护模型名和模板绑定，别在实例里重复改。",
+    description: "统一维护模型名称和模板绑定，避免在实例中重复修改。",
     href: "/dashboard/models",
   },
   {
     title: "请求模板",
-    description: "复用请求头和 metadata，干掉重复配置。",
+    description: "复用请求头和 metadata，减少重复配置。",
     href: "/dashboard/templates",
   },
   {
     title: "分组与通知",
-    description: "前台展示信息都在这里，而不是散落在代码里。",
+    description: "维护前台展示所需的分组信息和通知内容。",
     href: "/dashboard/groups",
   },
 ]
@@ -55,7 +55,7 @@ export default async function DashboardPage() {
       <div className="space-y-6">
         <PageHeader
           title="概览"
-          description="先补全环境变量，再谈 CRUD。现在还只是个壳。"
+          description="请先补全后台所需环境变量，再使用概览页面。"
         />
       </div>
     )
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
           title="概览"
         description={
           adminUser
-            ? "先看关键对象和最近状态，别在模板垃圾里浪费时间。"
+            ? "查看关键对象和最近状态，快速了解后台当前情况。"
             : `这里只展示你所在分组「${user.groupName}」的配置和运行结果。`
         }
       />
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-2xl">{summary.templateCount}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            模板越干净，配置页越不会长成垃圾堆。
+            模板越清晰，配置维护越简单。
           </CardContent>
         </Card>
         <Card>
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
             <CardTitle>快速入口</CardTitle>
             <CardDescription>
               {adminUser
-                ? "最先值得做的几个对象，已经按优先级摆好。"
+                ? "常用管理入口已集中在这里，便于快速进入对应页面。"
                 : "你只需要关心自己分组里的配置，其他全局对象交给管理员。"}
             </CardDescription>
           </CardHeader>
@@ -161,7 +161,7 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>轮询主节点</CardTitle>
-              <CardDescription>别管花里胡哨的图表，先确认轮询节点没死。</CardDescription>
+              <CardDescription>优先确认轮询节点租约状态是否正常。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
@@ -184,7 +184,7 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>最近检测记录</CardTitle>
-            <CardDescription>最近 8 条结果，够你快速判断系统是不是在冒烟。</CardDescription>
+            <CardDescription>最近 8 条结果，可用于快速判断系统运行情况。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {recentHistory.map((item) => (
@@ -210,7 +210,7 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>当前通知</CardTitle>
-              <CardDescription>只列最前面的几条，真正编辑去通知页。</CardDescription>
+              <CardDescription>这里只展示最新几条通知，完整维护请前往通知页面。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {notifications.slice(0, 5).map((item) => (

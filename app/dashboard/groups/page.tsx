@@ -31,7 +31,7 @@ export default async function GroupsPage({
   const success = getParam(params.success)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="分组信息" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="分组信息" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const groups = await listGroups()
@@ -40,7 +40,7 @@ export default async function GroupsPage({
     <div className="space-y-6">
       <PageHeader
         title="分组信息"
-        description="这是前台展示层的元数据，不复杂，但必须干净。"
+        description="维护前台展示所需的分组元数据。"
         actions={<Button render={<Link href="/dashboard/groups/new" />}>新增分组</Button>}
       />
       {success ? <Notice title="操作成功" description={success} variant="success" /> : null}
@@ -49,7 +49,7 @@ export default async function GroupsPage({
         <CardHeader>
           <CardTitle>分组列表</CardTitle>
           <CardDescription>
-            这里和 `check_configs.group_name` 是文本关联。乱改名字会把前台显示搞烂。
+            这里与 `check_configs.group_name` 是文本关联，修改名称前请先确认前台展示与配置引用。
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">

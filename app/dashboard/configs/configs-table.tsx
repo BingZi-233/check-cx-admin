@@ -409,7 +409,7 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
             ) : (
               <tr>
                 <td colSpan={10} className="py-10 text-center text-sm text-muted-foreground">
-                  没有匹配的配置。把筛选条件收一收，别把自己也筛没了。
+                  没有匹配的配置，请调整筛选条件后重试。
                 </td>
               </tr>
             )}

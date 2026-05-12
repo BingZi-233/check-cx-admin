@@ -24,7 +24,7 @@ export default async function TemplatesPage({
   const error = Array.isArray(params.error) ? params.error[0] : params.error
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="请求模板" description="缺少 service role，模板页不会工作。" />
+    return <PageHeader title="请求模板" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const templates = await listTemplates()
@@ -34,7 +34,7 @@ export default async function TemplatesPage({
     <div className="space-y-6">
       <PageHeader
         title="请求模板"
-        description="模板存在的意义只有一个：消灭重复配置。"
+        description="统一复用请求头和 metadata，减少重复配置。"
         actions={
           <div className="flex items-center gap-2">
             <CleanupUnusedTemplatesButton unusedCount={unusedTemplateCount} />

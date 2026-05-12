@@ -44,7 +44,7 @@ export default async function ConfigsPage({
   if (!hasAdminDatabaseEnv()) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Provider 配置" description="缺少 service role 之前，别指望这页能动。" />
+        <PageHeader title="Provider 配置" description="缺少 service role 凭据，当前页面暂不可用。" />
       </div>
     )
   }
@@ -146,7 +146,7 @@ export default async function ConfigsPage({
         title="Provider 配置"
         description={
           adminUser
-            ? "管理真正参与检测的实例。默认优先停用，不要手滑删除。"
+            ? "管理实际参与检测的实例，优先通过启停维护运行状态。"
             : `这里只能维护分组「${user.groupName}」下的配置。`
         }
         actions={

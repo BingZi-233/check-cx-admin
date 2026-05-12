@@ -21,7 +21,7 @@ export default async function NewModelPage({
   const error = Array.isArray(params.error) ? params.error[0] : params.error
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="新建模型" description="先配 service role。" />
+    return <PageHeader title="新建模型" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const templates = await listTemplates()
@@ -30,7 +30,7 @@ export default async function NewModelPage({
     <div className="space-y-6">
       <PageHeader
         title="新建模型"
-        description="模型层只管模型定义和绑定模板，不要把实例信息塞进来。"
+        description="模型层用于维护模型定义和绑定模板，实例信息请在配置页管理。"
         actions={<Button variant="outline" render={<Link href="/dashboard/models" />}>返回列表</Button>}
       />
       {error ? <Notice variant="warning" title="保存失败" description={error} /> : null}

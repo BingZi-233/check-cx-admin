@@ -41,7 +41,7 @@ export default async function EditNotificationPage({
   const success = getParam(query.success)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="编辑系统通知" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="编辑系统通知" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const notification = await getNotificationById(id)
@@ -67,7 +67,7 @@ export default async function EditNotificationPage({
         <CardHeader>
           <CardTitle>通知内容</CardTitle>
           <CardDescription>
-            激活状态和级别是运营变量，不要把它们藏起来。
+            激活状态和级别会直接影响前台展示，请按实际运营需求维护。
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -31,14 +31,14 @@ export default async function NewNotificationPage({
   const error = getParam(params.error)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="新增系统通知" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="新增系统通知" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="新增系统通知"
-        description="通知不是富文本编辑器竞赛，先把可维护性保住。"
+        description="通知内容以清晰、可维护为主，预览会按 Markdown 展示。"
         actions={
           <Button variant="outline" render={<Link href="/dashboard/notifications" />}>
             返回列表

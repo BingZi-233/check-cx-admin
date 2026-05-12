@@ -18,7 +18,7 @@ export default async function SystemPage() {
   const user = await requireAppUser()
   const adminUser = isAdminUser(user)
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="运行状态" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="运行状态" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const [lease, stats, configs] = await Promise.all([
@@ -43,7 +43,7 @@ export default async function SystemPage() {
         title="运行状态"
         description={
           adminUser
-            ? "只看关键运行信息：租约和可用性。别给自己造一个没人维护的 NOC。"
+            ? "查看关键运行信息，包括租约状态和配置可用性。"
             : `这里只展示分组「${user.groupName}」的配置可用性。`
         }
       />
@@ -52,7 +52,7 @@ export default async function SystemPage() {
           <Card>
             <CardHeader>
               <CardTitle>轮询租约</CardTitle>
-              <CardDescription>主节点选举状态。没有它，多节点就会互相踩数据。</CardDescription>
+              <CardDescription>显示主节点租约状态，用于确认多节点轮询是否正常。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center justify-between rounded-lg border p-3">

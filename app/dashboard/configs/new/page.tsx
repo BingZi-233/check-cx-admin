@@ -29,7 +29,7 @@ export default async function NewConfigPage({
   const sourceId = getParam(params.source)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="新建配置" description="先配 service role，不然新增只是幻觉。" />
+    return <PageHeader title="新建配置" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const [groups, models, sourceConfig] = await Promise.all([
@@ -48,7 +48,7 @@ export default async function NewConfigPage({
     <div className="space-y-6">
       <PageHeader
         title="新建配置"
-        description="把检测实例写清楚。特殊情况越少，后面越省心。"
+        description="填写检测实例的连接信息，尽量保持配置简单明确。"
         actions={<Button variant="outline" render={<Link href="/dashboard/configs" />}>返回列表</Button>}
       />
       {error ? <Notice variant="warning" title="保存失败" description={error} /> : null}
@@ -56,7 +56,7 @@ export default async function NewConfigPage({
         <Notice
           variant="info"
           title="正在复制已有配置"
-          description={`已从「${sourceConfig.name}」预填表单，改完再创建，别直接把旧配置覆盖了。`}
+          description={`已从「${sourceConfig.name}」预填表单，请确认差异后再创建新配置。`}
         />
       ) : null}
       <Card>

@@ -37,7 +37,7 @@ export default async function EditGroupPage({
   const success = getParam(query.success)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="编辑分组" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="编辑分组" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const group = await getGroupById(id)

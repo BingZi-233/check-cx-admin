@@ -21,14 +21,14 @@ export default async function NewTemplatePage({
   const error = Array.isArray(params.error) ? params.error[0] : params.error
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="新建模板" description="先配 service role。" />
+    return <PageHeader title="新建模板" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="新建模板"
-        description="模板是复用层，不是第二套配置页。能抽就抽，别复制。"
+        description="模板用于复用通用请求参数，减少重复配置。"
         actions={<Button variant="outline" render={<Link href="/dashboard/templates" />}>返回列表</Button>}
       />
       {error ? <Notice variant="warning" title="保存失败" description={error} /> : null}

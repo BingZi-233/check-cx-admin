@@ -35,7 +35,7 @@ export default async function UsersPage({
   const success = getParam(params.success)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="允许用户" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="允许用户" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const [users, groups] = await Promise.all([listAdminUsers(), listGroups()])

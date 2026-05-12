@@ -30,7 +30,7 @@ export default async function NewGroupPage({
   const error = getParam(params.error)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="新增分组" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="新增分组" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   return (
@@ -48,7 +48,7 @@ export default async function NewGroupPage({
       <Card>
         <CardHeader>
           <CardTitle>分组信息</CardTitle>
-          <CardDescription>标签用英文逗号分隔，别引入花哨结构。</CardDescription>
+          <CardDescription>标签使用英文逗号分隔，便于保持结构简单。</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={createGroupAction} className="grid gap-5">

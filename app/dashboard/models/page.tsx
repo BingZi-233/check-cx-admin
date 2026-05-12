@@ -28,7 +28,7 @@ export default async function ModelsPage({
   const error = getParam(params.error)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="模型配置" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="模型配置" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const models = await listModels()
@@ -38,7 +38,7 @@ export default async function ModelsPage({
     <div className="space-y-6">
       <PageHeader
         title="模型配置"
-        description="统一维护模型定义和模板绑定，别把同一模型改十遍。"
+        description="统一维护模型定义和模板绑定，避免重复修改同一模型。"
         actions={
           <div className="flex items-center gap-2">
             <CleanupUnusedModelsButton unusedCount={unusedModelCount} />

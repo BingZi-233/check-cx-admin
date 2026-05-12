@@ -40,7 +40,7 @@ export default async function EditConfigPage({
   const success = getParam(query.success)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="编辑配置" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="编辑配置" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const [config, models] = await Promise.all([getConfigById(id, user), listModels(user)])

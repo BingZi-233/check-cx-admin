@@ -17,7 +17,7 @@ import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 export default async function HistoryPage() {
   const user = await requireAppUser()
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="历史记录" description="缺少 service role，这页不会工作。" />
+    return <PageHeader title="历史记录" description="缺少 service role 凭据，当前页面暂不可用。" />
   }
 
   const history = await listRecentHistory(user, 200)
@@ -28,7 +28,7 @@ export default async function HistoryPage() {
         title="历史记录"
         description={
           isAdminUser(user)
-            ? "只读页面。先看问题分布，不要急着做花哨图表。"
+            ? "查看问题分布和最近结果，便于排查运行情况。"
             : `只展示分组「${user.groupName}」下配置的历史结果。`
         }
       />
@@ -36,7 +36,7 @@ export default async function HistoryPage() {
         <CardHeader>
           <CardTitle>最近 200 条检测结果</CardTitle>
           <CardDescription>
-            这是运营视图，不是编辑界面。真正的写操作应该回到配置页。
+            这里用于查看最近结果；如需调整配置，请返回对应配置页面。
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
