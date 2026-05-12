@@ -16,7 +16,7 @@ import { formatDateTime } from "@/lib/admin/format"
 import { listAdminUsers } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
-import { inviteAdminUserAction } from "./actions"
+import { inviteAdminUserAction, resendAdminUserInviteAction } from "./actions"
 
 function getParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
@@ -104,6 +104,7 @@ export default async function UsersPage({
                 <th className="py-3 pr-4">邀请时间</th>
                 <th className="py-3 pr-4">激活时间</th>
                 <th className="py-3 pr-4">Auth 用户</th>
+                <th className="py-3">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -128,6 +129,16 @@ export default async function UsersPage({
                   <td className="py-3 pr-4 text-muted-foreground">{formatDateTime(item.activated_at)}</td>
                   <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">
                     {item.auth_user_id ?? "-"}
+                  </td>
+                  <td className="py-3">
+                    {!item.activated_at && item.is_active !== false ? (
+                      <form action={resendAdminUserInviteAction}>
+                        <input type="hidden" name="id" value={item.id} />
+                        <Button type="submit" variant="outline">重新发送</Button>
+                      </form>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
                   </td>
                 </tr>
               ))}
