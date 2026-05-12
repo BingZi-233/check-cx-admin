@@ -6,6 +6,7 @@ import { ExternalLinkIcon } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { Notice } from "@/components/admin/notice"
+import { PageTransition } from "@/components/page-transition"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -80,7 +81,9 @@ export default async function DashboardLayout({
               description={adminDbWarnings.join("；")}
             />
           ) : null}
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </main>
       </SidebarInset>
     </SidebarProvider>
