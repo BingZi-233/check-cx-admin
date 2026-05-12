@@ -2,10 +2,8 @@
 
 import { useState } from "react"
 
+import { nativeSelectClassName } from "@/lib/admin/forms"
 import type { CheckRequestTemplateRecord, ProviderType } from "@/lib/admin/types"
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
 
 type ModelTemplateFieldsProps = {
   initialType: ProviderType
@@ -41,7 +39,7 @@ export function ModelTemplateFields({
             setType(nextType)
             setTemplateId("")
           }}
-          className={selectClassName}
+          className={nativeSelectClassName}
         >
           <option value="openai">OpenAI</option>
           <option value="gemini">Gemini</option>
@@ -54,7 +52,7 @@ export function ModelTemplateFields({
           name="template_id"
           value={templateId}
           onChange={(event) => setTemplateId(event.target.value)}
-          className={selectClassName}
+          className={nativeSelectClassName}
         >
           <option value="">不使用模板</option>
           {filteredTemplates.map((item) => (

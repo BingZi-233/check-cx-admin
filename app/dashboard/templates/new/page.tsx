@@ -6,11 +6,10 @@ import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { nativeSelectClassName } from "@/lib/admin/forms"
 import { Textarea } from "@/components/ui/textarea"
 import { requireAdminUser } from "@/lib/admin/auth"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
-
-const selectClassName = "flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
 
 export default async function NewTemplatePage({
   searchParams,
@@ -46,7 +45,7 @@ export default async function NewTemplatePage({
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">Provider 类型</span>
-              <select name="type" defaultValue="openai" className={selectClassName}>
+              <select name="type" defaultValue="openai" className={nativeSelectClassName}>
                 <option value="openai">OpenAI</option>
                 <option value="gemini">Gemini</option>
                 <option value="anthropic">Anthropic</option>

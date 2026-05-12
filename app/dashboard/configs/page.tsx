@@ -13,13 +13,12 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { requireAppUser } from "@/lib/admin/auth"
+import { nativeSelectClassName } from "@/lib/admin/forms"
 import { listConfigs, listModels, listTemplates } from "@/lib/admin/queries"
 import { isAdminUser } from "@/lib/admin/permissions"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 import { ConfigsTable } from "./configs-table"
-
-const selectClassName = "flex h-7 w-full rounded-md border border-input bg-input/20 px-2 py-0.5 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 md:text-xs/relaxed dark:bg-input/30"
 
 function getParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
@@ -180,7 +179,7 @@ export default async function ConfigsPage({
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">Provider</span>
-              <select name="type" defaultValue={type} className={selectClassName}>
+              <select name="type" defaultValue={type} className={nativeSelectClassName}>
                 <option value="">全部</option>
                 <option value="openai">OpenAI</option>
                 <option value="gemini">Gemini</option>
@@ -190,7 +189,7 @@ export default async function ConfigsPage({
             <label className="space-y-2">
               <span className="text-sm font-medium">分组</span>
               {adminUser ? (
-                <select name="group_name" defaultValue={groupName} className={selectClassName}>
+                <select name="group_name" defaultValue={groupName} className={nativeSelectClassName}>
                   <option value="">全部</option>
                   {groupNames.map((item) => (
                     <option key={item} value={item}>
@@ -204,7 +203,7 @@ export default async function ConfigsPage({
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">模板</span>
-              <select name="template_id" defaultValue={templateId} className={selectClassName}>
+              <select name="template_id" defaultValue={templateId} className={nativeSelectClassName}>
                 <option value="">全部</option>
                 <option value="__none__">无模板</option>
                 {templates.map((item) => (
@@ -216,7 +215,7 @@ export default async function ConfigsPage({
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">启用状态</span>
-              <select name="enabled" defaultValue={enabled} className={selectClassName}>
+              <select name="enabled" defaultValue={enabled} className={nativeSelectClassName}>
                 <option value="">全部</option>
                 <option value="enabled">启用</option>
                 <option value="disabled">停用</option>
@@ -224,7 +223,7 @@ export default async function ConfigsPage({
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">维护状态</span>
-              <select name="maintenance" defaultValue={maintenance} className={selectClassName}>
+              <select name="maintenance" defaultValue={maintenance} className={nativeSelectClassName}>
                 <option value="">全部</option>
                 <option value="maintenance">维护中</option>
                 <option value="normal">非维护</option>

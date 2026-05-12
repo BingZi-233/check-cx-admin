@@ -26,6 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { nativeFormControlClassName, nativeSelectClassName } from "@/lib/admin/forms"
 import { formatDate, formatDateTime, maskSecret } from "@/lib/admin/format"
 import type { CheckConfigRecord, CheckModelRecord, ProviderType } from "@/lib/admin/types"
 
@@ -446,7 +447,7 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
                 form={formId}
                 value={resolvedTargetModelId}
                 onChange={(event) => setTargetModelId(event.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                className={nativeSelectClassName}
                 disabled={!selectedProviderType || filteredModels.length === 0}
                 required
               >
@@ -512,7 +513,7 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
                 value={targetApiKey}
                 onChange={(event) => setTargetApiKey(event.target.value)}
                 placeholder="输入新的 API Key"
-                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                className={nativeFormControlClassName}
                 required
                 autoComplete="off"
               />
@@ -558,7 +559,7 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
                 value={targetEndpoint}
                 onChange={(event) => setTargetEndpoint(event.target.value)}
                 placeholder="https://api.example.com/v1"
-                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                className={nativeFormControlClassName}
                 required
                 autoComplete="off"
               />
@@ -604,7 +605,7 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
                 value={targetName}
                 onChange={(event) => setTargetName(event.target.value)}
                 placeholder="输入新的显示名称"
-                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                className={nativeFormControlClassName}
                 required
                 autoComplete="off"
               />

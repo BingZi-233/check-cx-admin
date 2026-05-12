@@ -2,10 +2,8 @@
 
 import { useState } from "react"
 
+import { nativeSelectClassName } from "@/lib/admin/forms"
 import type { CheckModelRecord, ProviderType } from "@/lib/admin/types"
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
 
 type ConfigModelFieldsProps = {
   initialType: ProviderType
@@ -42,7 +40,7 @@ export function ConfigModelFields({
             setType(nextType)
             setModelId(getFirstModelId(nextType))
           }}
-          className={selectClassName}
+          className={nativeSelectClassName}
         >
           <option value="openai">OpenAI</option>
           <option value="gemini">Gemini</option>
@@ -55,7 +53,7 @@ export function ConfigModelFields({
           name="model_id"
           value={modelId}
           onChange={(event) => setModelId(event.target.value)}
-          className={selectClassName}
+          className={nativeSelectClassName}
           required
         >
           {filteredModels.length === 0 ? (

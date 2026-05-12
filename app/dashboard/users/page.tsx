@@ -12,8 +12,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { requireAdminUser } from "@/lib/admin/auth"
+import { nativeSelectClassName } from "@/lib/admin/forms"
 import { formatDateTime } from "@/lib/admin/format"
-import { listAdminUsers } from "@/lib/admin/queries"
+import { listAdminUsers, listGroups } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 import { inviteAdminUserAction } from "./actions"
@@ -37,7 +38,14 @@ export default async function UsersPage({
     return <PageHeader title="允许用户" description="缺少 service role，这页不会工作。" />
   }
 
-  const users = await listAdminUsers()
+  const [users, groups] = await Promise.all([listAdminUsers(), listGroups()])
+  const groupNames = Array.from(
+    new Set(
+      groups
+        .map((item) => item.group_name?.trim())
+        .filter((item): item is string => Boolean(item))
+    )
+  ).sort((left, right) => left.localeCompare(right, "zh-Hans-CN"))
 
   return (
     <div className="space-y-6">
@@ -66,7 +74,7 @@ export default async function UsersPage({
                 id="role"
                 name="role"
                 defaultValue="member"
-                className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
+                className={nativeSelectClassName}
               >
                 <option value="member">成员</option>
                 <option value="admin">管理员</option>
@@ -74,11 +82,22 @@ export default async function UsersPage({
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="group_name">预设分组</Label>
-              <Input
+              <select
                 id="group_name"
                 name="group_name"
-                placeholder="成员必填，例如 LinuxDO"
-              />
+                defaultValue=""
+                className={nativeSelectClassName}
+              >
+                <option value="">不预设分组（管理员可留空）</option>
+                {groupNames.map((groupName) => (
+                  <option key={groupName} value={groupName}>
+                    {groupName}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                选项来自分组信息。成员必须选一个；如果列表为空，先去“分组信息”里创建。
+              </p>
             </div>
             <div className="md:col-span-2 flex justify-end">
               <Button type="submit">保存允许名单</Button>

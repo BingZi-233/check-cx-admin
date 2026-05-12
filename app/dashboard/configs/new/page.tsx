@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { requireAppUser } from "@/lib/admin/auth"
+import { nativeSelectClassName } from "@/lib/admin/forms"
 import { getConfigById, listGroups, listModels } from "@/lib/admin/queries"
 import { isAdminUser } from "@/lib/admin/permissions"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
@@ -78,7 +79,7 @@ export default async function NewConfigPage({
             <label className="space-y-2">
               <span className="text-sm font-medium">分组名称</span>
               {adminUser ? (
-                <select name="group_name" defaultValue={sourceGroupName} className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30">
+                <select name="group_name" defaultValue={sourceGroupName} className={nativeSelectClassName}>
                   <option value="">不设置分组</option>
                   {!hasSourceGroup && sourceGroupName ? (
                     <option value={sourceGroupName}>{sourceGroupName}（当前未在分组表中）</option>

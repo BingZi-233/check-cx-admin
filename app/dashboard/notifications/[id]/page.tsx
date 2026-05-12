@@ -18,6 +18,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { requireAdminUser } from "@/lib/admin/auth"
+import { nativeSelectClassName } from "@/lib/admin/forms"
 import { formatDateTime } from "@/lib/admin/format"
 import { getNotificationById } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
@@ -88,7 +89,7 @@ export default async function EditNotificationPage({
                 <select
                   id="level"
                   name="level"
-                  className="flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+                  className={nativeSelectClassName}
                   defaultValue={notification.level ?? "info"}
                 >
                   <option value="info">信息</option>

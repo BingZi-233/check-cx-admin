@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { requireAdminUser } from "@/lib/admin/auth"
+import { nativeSelectClassName } from "@/lib/admin/forms"
 import { formatDateTime } from "@/lib/admin/format"
 import { stringifyJson } from "@/lib/admin/json"
 import { getTemplateById } from "@/lib/admin/queries"
@@ -81,7 +82,7 @@ export default async function EditTemplatePage({
                 <select
                   id="type"
                   name="type"
-                  className="flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+                  className={nativeSelectClassName}
                   defaultValue={template.type}
                 >
                   <option value="openai">OpenAI</option>
