@@ -42,7 +42,7 @@ export default async function DashboardLayout({
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="h-4" />
+          <Separator orientation="vertical" className="h-16" />
           <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">check-cx 后台管理</p>
