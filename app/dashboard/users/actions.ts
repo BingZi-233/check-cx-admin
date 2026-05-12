@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
+import { redirect, unstable_rethrow } from "next/navigation"
 
 import { requireAdminUser } from "@/lib/admin/auth"
 import { getAppUrl } from "@/lib/admin/env"
@@ -24,6 +24,24 @@ function parseUserRole(value: string): UserRole {
   }
 
   throw new Error("用户角色非法")
+}
+
+function getActionErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && typeof error.message === "string" && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.trim().length > 0
+  ) {
+    return error.message
+  }
+
+  return fallback
 }
 
 function getInviteRedirectTo() {
@@ -119,7 +137,8 @@ export async function inviteAdminUserAction(formData: FormData) {
     revalidatePath("/dashboard/users")
     redirect(withMessage("/dashboard/users", "success", successMessage))
   } catch (error) {
-    const message = error instanceof Error ? error.message : "发送邀请失败"
+    unstable_rethrow(error)
+    const message = getActionErrorMessage(error, "发送邀请失败")
     redirect(withMessage("/dashboard/users", "error", message))
   }
 }
@@ -168,7 +187,8 @@ export async function resendAdminUserInviteAction(formData: FormData) {
     revalidatePath("/dashboard/users")
     redirect(withMessage("/dashboard/users", "success", `已重新发送邀请邮件到 ${existing.email}`))
   } catch (error) {
-    const message = error instanceof Error ? error.message : "重新发送邀请失败"
+    unstable_rethrow(error)
+    const message = getActionErrorMessage(error, "重新发送邀请失败")
     redirect(withMessage("/dashboard/users", "error", message))
   }
 }
