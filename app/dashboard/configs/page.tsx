@@ -31,6 +31,7 @@ export default async function ConfigsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const user = await requireAppUser()
+  const adminUser = isAdminUser(user)
   const params = await searchParams
   const success = getParam(params.success)
   const error = getParam(params.error)
@@ -51,8 +52,8 @@ export default async function ConfigsPage({
 
   const [configs, templates, models] = await Promise.all([
     listConfigs(user),
-    listTemplates(),
-    listModels(),
+    listTemplates(user),
+    listModels(user),
   ])
   const groupNames = Array.from(
     new Set(
@@ -145,7 +146,7 @@ export default async function ConfigsPage({
       <PageHeader
         title="Provider 配置"
         description={
-          isAdminUser(user)
+          adminUser
             ? "管理真正参与检测的实例。默认优先停用，不要手滑删除。"
             : `这里只能维护分组「${user.groupName}」下的配置。`
         }
@@ -188,7 +189,7 @@ export default async function ConfigsPage({
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium">分组</span>
-              {isAdminUser(user) ? (
+              {adminUser ? (
                 <select name="group_name" defaultValue={groupName} className={selectClassName}>
                   <option value="">全部</option>
                   {groupNames.map((item) => (

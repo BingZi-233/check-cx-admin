@@ -33,6 +33,7 @@ export default async function EditConfigPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const user = await requireAppUser()
+  const adminUser = isAdminUser(user)
   const { id } = await params
   const query = await searchParams
   const error = getParam(query.error)
@@ -42,7 +43,7 @@ export default async function EditConfigPage({
     return <PageHeader title="编辑配置" description="缺少 service role，这页不会工作。" />
   }
 
-  const [config, models] = await Promise.all([getConfigById(id, user), listModels()])
+  const [config, models] = await Promise.all([getConfigById(id, user), listModels(user)])
 
   if (!config) {
     notFound()
@@ -82,7 +83,7 @@ export default async function EditConfigPage({
             />
             <div className="space-y-2">
               <Label htmlFor="group_name">分组名</Label>
-              {isAdminUser(user) ? (
+              {adminUser ? (
                 <Input id="group_name" name="group_name" defaultValue={config.group_name ?? ""} />
               ) : (
                 <>

@@ -26,6 +26,12 @@ type CountQuery = PromiseLike<CountResult> & {
   in: (column: string, values: readonly string[]) => CountQuery
 }
 
+type ScopedConfigReference = {
+  id: string
+  model_id: string
+  group_name: string | null
+}
+
 async function countRows(
   table: string,
   apply?: (query: CountQuery) => CountQuery
@@ -56,7 +62,7 @@ function applyConfigScope(query: any, user: AppUser) {
   return query.eq("group_name", getRequiredGroupName(user))
 }
 
-async function listScopedConfigIds(user: AppUser) {
+async function listScopedConfigReferences(user: AppUser) {
   if (isAdminUser(user)) {
     return null
   }
@@ -64,21 +70,25 @@ async function listScopedConfigIds(user: AppUser) {
   const client = createAdminClient()
   const { data, error } = await client
     .from("check_configs")
-    .select("id")
+    .select("id, model_id, group_name")
     .eq("group_name", getRequiredGroupName(user))
 
   if (error) {
     throw error
   }
 
-  return (data ?? []).map((item) => item.id)
+  return (data ?? []) as ScopedConfigReference[]
+}
+
+async function listScopedConfigIds(user: AppUser) {
+  const scopedConfigs = await listScopedConfigReferences(user)
+  return scopedConfigs?.map((item) => item.id) ?? null
 }
 
 export async function getDashboardSummary(user: AppUser): Promise<DashboardSummary> {
   if (!isAdminUser(user)) {
-    const [configs, activeNotificationCount, scopedConfigIds] = await Promise.all([
+    const [configs, scopedConfigIds] = await Promise.all([
       listConfigs(user),
-      countRows("system_notifications", (query) => query.eq("is_active", true)),
       listScopedConfigIds(user),
     ])
 
@@ -96,7 +106,7 @@ export async function getDashboardSummary(user: AppUser): Promise<DashboardSumma
       maintenanceConfigCount: configs.filter((item) => Boolean(item.is_maintenance)).length,
       templateCount: new Set(configs.map((item) => item.template_id).filter(Boolean)).size,
       groupCount: new Set(configs.map((item) => item.group_name).filter(Boolean)).size,
-      activeNotificationCount,
+      activeNotificationCount: 0,
       recentErrorCount,
     }
   }
@@ -235,8 +245,46 @@ export async function getConfigById(id: string, user: AppUser) {
   } as CheckConfigRecord
 }
 
-export async function listModels() {
+export async function listModels(user?: AppUser) {
   const client = createAdminClient()
+
+  if (user && !isAdminUser(user)) {
+    const scopedConfigs = await listScopedConfigReferences(user)
+
+    if (!scopedConfigs || scopedConfigs.length === 0) {
+      return []
+    }
+
+    const modelIds = Array.from(new Set(scopedConfigs.map((item) => item.model_id)))
+    const { data, error } = await client
+      .from("check_models")
+      .select("*, check_request_templates(name)")
+      .in("id", modelIds)
+      .order("updated_at", { ascending: false })
+
+    if (error) {
+      throw error
+    }
+
+    const countMap = new Map<string, number>()
+    for (const item of scopedConfigs) {
+      const current = countMap.get(item.model_id) ?? 0
+      countMap.set(item.model_id, current + 1)
+    }
+
+    return ((data ?? []) as Array<
+      Omit<CheckModelRecord, "template_name"> & {
+        check_request_templates?: { name: string } | Array<{ name: string }> | null
+      }
+    >).map((item) => ({
+      ...item,
+      template_name: Array.isArray(item.check_request_templates)
+        ? (item.check_request_templates[0]?.name ?? null)
+        : (item.check_request_templates?.name ?? null),
+      config_count: countMap.get(item.id) ?? 0,
+    }))
+  }
+
   const [{ data, error }, configs] = await Promise.all([
     client
       .from("check_models")
@@ -321,8 +369,45 @@ export async function getModelById(id: string) {
   } satisfies CheckModelRecord
 }
 
-export async function listTemplates() {
+export async function listTemplates(user?: AppUser) {
   const client = createAdminClient()
+
+  if (user && !isAdminUser(user)) {
+    const models = await listModels(user)
+    const templateIds = Array.from(
+      new Set(models.map((item) => item.template_id).filter((item): item is string => Boolean(item)))
+    )
+
+    if (templateIds.length === 0) {
+      return []
+    }
+
+    const { data, error } = await client
+      .from("check_request_templates")
+      .select("*")
+      .in("id", templateIds)
+      .order("updated_at", { ascending: false })
+
+    if (error) {
+      throw error
+    }
+
+    const countMap = new Map<string, number>()
+    for (const item of models) {
+      if (!item.template_id) {
+        continue
+      }
+
+      const current = countMap.get(item.template_id) ?? 0
+      countMap.set(item.template_id, current + 1)
+    }
+
+    return ((data ?? []) as CheckRequestTemplateRecord[]).map((item) => ({
+      ...item,
+      model_count: countMap.get(item.id) ?? 0,
+    }))
+  }
+
   const [{ data, error }, models] = await Promise.all([
     client
       .from("check_request_templates")

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { requireAppUser } from "@/lib/admin/auth"
 import { requiredString, optionalString, booleanFromForm, parseProviderType, withMessage } from "@/lib/admin/forms"
 import { getRequiredGroupName, isAdminUser } from "@/lib/admin/permissions"
+import { listModels } from "@/lib/admin/queries"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 import type { AppUser, ProviderType } from "@/lib/admin/types"
 
@@ -174,6 +175,14 @@ async function parseConfigPayload(formData: FormData, user: AppUser) {
 
   if (model.type !== type) {
     throw new Error("模型类型和配置类型不一致")
+  }
+
+  if (!isAdminUser(user)) {
+    const scopedModels = await listModels(user)
+
+    if (!scopedModels.some((item) => item.id === modelId)) {
+      throw new Error("所选模型不在当前成员可用范围内")
+    }
   }
 
   return {
@@ -395,6 +404,14 @@ export async function batchConfigAction(formData: FormData) {
 
         if (!targetModel) {
           throw new Error("目标模型不存在")
+        }
+
+        if (!isAdminUser(user)) {
+          const scopedModels = await listModels(user)
+
+          if (!scopedModels.some((item) => item.id === targetModelId)) {
+            throw new Error("目标模型不在当前成员可用范围内")
+          }
         }
 
         const actualTypes = parseProviderTypeSet(selectedConfigs.map((item) => item.type))

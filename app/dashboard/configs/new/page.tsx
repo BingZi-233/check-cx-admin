@@ -22,6 +22,7 @@ export default async function NewConfigPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const user = await requireAppUser()
+  const adminUser = isAdminUser(user)
   const params = await searchParams
   const error = getParam(params.error)
   const sourceId = getParam(params.source)
@@ -31,8 +32,8 @@ export default async function NewConfigPage({
   }
 
   const [groups, models, sourceConfig] = await Promise.all([
-    listGroups(),
-    listModels(),
+    adminUser ? listGroups() : Promise.resolve([]),
+    listModels(user),
     sourceId ? getConfigById(sourceId, user) : Promise.resolve(null),
   ])
 
@@ -76,7 +77,7 @@ export default async function NewConfigPage({
             />
             <label className="space-y-2">
               <span className="text-sm font-medium">分组名称</span>
-              {isAdminUser(user) ? (
+              {adminUser ? (
                 <select name="group_name" defaultValue={sourceGroupName} className="flex h-9 w-full rounded-md border border-input bg-input/20 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30">
                   <option value="">不设置分组</option>
                   {!hasSourceGroup && sourceGroupName ? (

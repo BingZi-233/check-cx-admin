@@ -16,12 +16,13 @@ import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
 export default async function SystemPage() {
   const user = await requireAppUser()
+  const adminUser = isAdminUser(user)
   if (!hasAdminDatabaseEnv()) {
     return <PageHeader title="运行状态" description="缺少 service role，这页不会工作。" />
   }
 
   const [lease, stats, configs] = await Promise.all([
-    getPollerLease(),
+    adminUser ? getPollerLease() : Promise.resolve(null),
     listAvailabilityStats(user),
     listConfigs(user),
   ])
@@ -41,36 +42,38 @@ export default async function SystemPage() {
       <PageHeader
         title="运行状态"
         description={
-          isAdminUser(user)
+          adminUser
             ? "只看关键运行信息：租约和可用性。别给自己造一个没人维护的 NOC。"
             : `这里只展示分组「${user.groupName}」的配置可用性。`
         }
       />
-      <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>轮询租约</CardTitle>
-            <CardDescription>主节点选举状态。没有它，多节点就会互相踩数据。</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-muted-foreground">租约键</span>
-              <span className="font-medium">{lease?.lease_key ?? "poller"}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-muted-foreground">Leader</span>
-              <span className="font-medium">{lease?.leader_id ?? "暂无"}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-muted-foreground">租约到期</span>
-              <span className="font-medium">{formatDateTime(lease?.lease_expires_at)}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-muted-foreground">最后更新时间</span>
-              <span className="font-medium">{formatDateTime(lease?.updated_at)}</span>
-            </div>
-          </CardContent>
-        </Card>
+      <div className={`grid gap-4 ${adminUser ? "xl:grid-cols-[0.8fr_1.2fr]" : ""}`}>
+        {adminUser ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>轮询租约</CardTitle>
+              <CardDescription>主节点选举状态。没有它，多节点就会互相踩数据。</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <span className="text-muted-foreground">租约键</span>
+                <span className="font-medium">{lease?.lease_key ?? "poller"}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <span className="text-muted-foreground">Leader</span>
+                <span className="font-medium">{lease?.leader_id ?? "暂无"}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <span className="text-muted-foreground">租约到期</span>
+                <span className="font-medium">{formatDateTime(lease?.lease_expires_at)}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <span className="text-muted-foreground">最后更新时间</span>
+                <span className="font-medium">{formatDateTime(lease?.updated_at)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
         <Card>
           <CardHeader>
             <CardTitle>配置可用性</CardTitle>
