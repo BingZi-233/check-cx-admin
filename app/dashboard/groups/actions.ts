@@ -1,15 +1,25 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
-import { requireAdminUser } from "@/lib/admin/auth"
 import {
-  optionalString,
-  requiredString,
-  withMessage,
-} from "@/lib/admin/forms"
+  actionSuccess,
+  toActionError,
+  type ActionState,
+} from "@/lib/admin/action-result"
+import { requireAdminUser } from "@/lib/admin/auth"
+import { optionalString, requiredString } from "@/lib/admin/forms"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
+
+function revalidateGroupPaths(id?: string) {
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/groups")
+  revalidatePath("/dashboard/users")
+
+  if (id) {
+    revalidatePath(`/dashboard/groups/${id}`)
+  }
+}
 
 function getPayload(formData: FormData) {
   return {
@@ -19,7 +29,10 @@ function getPayload(formData: FormData) {
   }
 }
 
-export async function createGroupAction(formData: FormData) {
+export async function createGroupAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
   try {
@@ -30,21 +43,22 @@ export async function createGroupAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "创建分组失败"
-    redirect(withMessage("/dashboard/groups/new", "error", message))
+    return toActionError(error, "创建分组失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/groups")
-  redirect(withMessage("/dashboard/groups", "success", "分组已创建"))
+  revalidateGroupPaths()
+
+  return actionSuccess("分组已创建", "/dashboard/groups")
 }
 
-export async function updateGroupAction(formData: FormData) {
+export async function updateGroupAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
-  const id = requiredString(formData, "id", "分组 ID")
-
   try {
+    const id = requiredString(formData, "id", "分组 ID")
     const client = createAdminClient()
     const { error } = await client
       .from("group_info")
@@ -54,23 +68,23 @@ export async function updateGroupAction(formData: FormData) {
     if (error) {
       throw error
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "更新分组失败"
-    redirect(withMessage(`/dashboard/groups/${id}`, "error", message))
-  }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/groups")
-  revalidatePath(`/dashboard/groups/${id}`)
-  redirect(withMessage(`/dashboard/groups/${id}`, "success", "分组已更新"))
+    revalidateGroupPaths(id)
+
+    return actionSuccess("分组已更新")
+  } catch (error) {
+    return toActionError(error, "更新分组失败")
+  }
 }
 
-export async function deleteGroupAction(formData: FormData) {
+export async function deleteGroupAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
-  const id = requiredString(formData, "id", "分组 ID")
-
   try {
+    const id = requiredString(formData, "id", "分组 ID")
     const client = createAdminClient()
     const { error } = await client.from("group_info").delete().eq("id", id)
 
@@ -78,11 +92,10 @@ export async function deleteGroupAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "删除分组失败"
-    redirect(withMessage(`/dashboard/groups/${id}`, "error", message))
+    return toActionError(error, "删除分组失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/groups")
-  redirect(withMessage("/dashboard/groups", "success", "分组已删除"))
+  revalidateGroupPaths()
+
+  return actionSuccess("分组已删除", "/dashboard/groups")
 }

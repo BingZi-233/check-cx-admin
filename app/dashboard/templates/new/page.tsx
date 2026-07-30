@@ -1,69 +1,50 @@
 import Link from "next/link"
+import { ArrowLeftIcon } from "lucide-react"
 
-import { createTemplateAction } from "@/app/dashboard/templates/actions"
-import { Notice } from "@/components/admin/notice"
+import { TemplateForm } from "@/components/admin/forms/template-form"
 import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { nativeSelectClassName } from "@/lib/admin/forms"
-import { Textarea } from "@/components/ui/textarea"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { requireAdminUser } from "@/lib/admin/auth"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
-export default async function NewTemplatePage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
-}) {
+export default async function NewTemplatePage() {
   await requireAdminUser()
-  const params = await searchParams
-  const error = Array.isArray(params.error) ? params.error[0] : params.error
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="新建模板" description="缺少 service role 凭据，当前页面暂不可用。" />
+    return (
+      <PageHeader
+        title="新建模板"
+        description="缺少 service role 凭据，当前页面暂不可用。"
+      />
+    )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="新建模板"
-        description="模板用于复用通用请求参数，减少重复配置。"
-        actions={<Button variant="outline" render={<Link href="/dashboard/templates" />}>返回列表</Button>}
+        description="模板用于复用请求头和 metadata，减少在每条配置里重复填写。"
+        actions={
+          <Button variant="outline" render={<Link href="/dashboard/templates" />}>
+            <ArrowLeftIcon />
+            返回列表
+          </Button>
+        }
       />
-      {error ? <Notice variant="warning" title="保存失败" description={error} /> : null}
       <Card>
         <CardHeader>
           <CardTitle>模板表单</CardTitle>
           <CardDescription>请求头和 metadata 都是可选 JSON。</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={createTemplateAction} className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2">
-              <span className="text-sm font-medium">模板名称</span>
-              <Input name="name" required />
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium">Provider 类型</span>
-              <select name="type" defaultValue="openai" className={nativeSelectClassName}>
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
-                <option value="anthropic">Anthropic</option>
-              </select>
-            </label>
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium">请求头 JSON</span>
-              <Textarea name="request_header" className="min-h-36 font-mono" placeholder='{"Authorization":"Bearer ..."}' />
-            </label>
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium">metadata JSON</span>
-              <Textarea name="metadata" className="min-h-36 font-mono" placeholder='{"temperature":0}' />
-            </label>
-            <div className="md:col-span-2 flex justify-end gap-2">
-              <Button type="button" variant="outline" render={<Link href="/dashboard/templates" />}>取消</Button>
-              <Button type="submit">创建模板</Button>
-            </div>
-          </form>
+          <TemplateForm />
         </CardContent>
       </Card>
     </div>

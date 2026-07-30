@@ -1,10 +1,15 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect, unstable_rethrow } from "next/navigation"
 
+import {
+  actionSuccess,
+  toActionError,
+  ValidationError,
+  type ActionState,
+} from "@/lib/admin/action-result"
 import { requireAdminUser } from "@/lib/admin/auth"
-import { optionalString, requiredString, withMessage } from "@/lib/admin/forms"
+import { optionalString, requiredString } from "@/lib/admin/forms"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 import { UserRole } from "@/lib/admin/types"
 
@@ -22,27 +27,13 @@ function parseUserRole(value: string): UserRole {
     return value
   }
 
-  throw new Error("用户角色非法")
+  throw new ValidationError("role", "用户角色非法")
 }
 
-function getActionErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && typeof error.message === "string" && error.message.trim().length > 0) {
-    return error.message
-  }
-
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string" &&
-    error.message.trim().length > 0
-  ) {
-    return error.message
-  }
-
-  return fallback
-}
-export async function inviteAdminUserAction(formData: FormData) {
+export async function inviteAdminUserAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   const currentUser = await requireAdminUser()
   const client = createAdminClient()
 
@@ -52,7 +43,7 @@ export async function inviteAdminUserAction(formData: FormData) {
     const groupName = normalizeGroupName(optionalString(formData, "group_name"))
 
     if (role === "member" && !groupName) {
-      throw new Error("成员必须预设分组名称")
+      throw new ValidationError("group_name", "成员必须预设分组名称")
     }
 
     const { data: existing, error: existingError } = await client
@@ -74,7 +65,10 @@ export async function inviteAdminUserAction(formData: FormData) {
     }
 
     if (existing) {
-      const { error } = await client.from("admin_users").update(payload).eq("id", existing.id)
+      const { error } = await client
+        .from("admin_users")
+        .update(payload)
+        .eq("id", existing.id)
 
       if (error) {
         throw error
@@ -87,15 +81,14 @@ export async function inviteAdminUserAction(formData: FormData) {
       }
     }
 
-    const successMessage = existing
-      ? "允许名单已更新；对方下次使用 GitHub 登录会按新配置生效"
-      : "允许名单已写入；对方现在可以使用 GitHub 登录后台"
-
     revalidatePath("/dashboard/users")
-    redirect(withMessage("/dashboard/users", "success", successMessage))
+
+    return actionSuccess(
+      existing
+        ? "允许名单已更新；对方下次使用 GitHub 登录会按新配置生效"
+        : "允许名单已写入；对方现在可以使用 GitHub 登录后台"
+    )
   } catch (error) {
-    unstable_rethrow(error)
-    const message = getActionErrorMessage(error, "写入允许名单失败")
-    redirect(withMessage("/dashboard/users", "error", message))
+    return toActionError(error, "写入允许名单失败")
   }
 }

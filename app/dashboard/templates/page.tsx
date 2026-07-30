@@ -1,93 +1,52 @@
-import Link from "next/link"
-import { PlusIcon } from "lucide-react"
-
+import {
+  TemplatesTable,
+  type TemplateJsonTexts,
+} from "@/app/dashboard/templates/templates-table"
 import { CleanupUnusedTemplatesButton } from "@/components/admin/cleanup-unused-templates-button"
-import { Notice } from "@/components/admin/notice"
 import { PageHeader } from "@/components/admin/page-header"
-import { ProviderBadge } from "@/components/admin/status-badge"
-import { TemplateRowActions } from "@/components/admin/template-row-actions"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireAdminUser } from "@/lib/admin/auth"
-import { formatDateTime } from "@/lib/admin/format"
+import { stringifyJson } from "@/lib/admin/json"
 import { listTemplates } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
-export default async function TemplatesPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
-}) {
+export default async function TemplatesPage() {
   await requireAdminUser()
-  const params = await searchParams
-  const success = Array.isArray(params.success) ? params.success[0] : params.success
-  const error = Array.isArray(params.error) ? params.error[0] : params.error
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="请求模板" description="缺少 service role 凭据，当前页面暂不可用。" />
+    return (
+      <PageHeader
+        title="请求模板"
+        description="缺少 service role 凭据，当前页面暂不可用。"
+      />
+    )
   }
 
   const templates = await listTemplates()
-  const unusedTemplateCount = templates.filter((item) => (item.model_count ?? 0) === 0).length
+  const unusedTemplateCount = templates.filter(
+    (item) => (item.model_count ?? 0) === 0
+  ).length
+
+  // JSON 在服务端格式化好再传下去，避免把 stringifyJson 拉进客户端 bundle
+  const jsonTexts: TemplateJsonTexts = Object.fromEntries(
+    templates.map((item) => [
+      item.id,
+      {
+        requestHeader: stringifyJson(item.request_header),
+        metadata: stringifyJson(item.metadata),
+      },
+    ])
+  )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="请求模板"
-        description="统一复用请求头和 metadata，减少重复配置。"
+        description={`共 ${templates.length} 条，其中 ${unusedTemplateCount} 条未被引用。模板类型必须和模型类型一致。`}
         actions={
-          <div className="flex items-center gap-2">
-            <CleanupUnusedTemplatesButton unusedCount={unusedTemplateCount} />
-            <Button render={<Link href="/dashboard/templates/new" />}><PlusIcon />新建模板</Button>
-          </div>
+          <CleanupUnusedTemplatesButton unusedCount={unusedTemplateCount} />
         }
       />
-      {success ? <Notice variant="success" title="操作成功" description={success} /> : null}
-      {error ? <Notice variant="warning" title="操作失败" description={error} /> : null}
-      <Card>
-        <CardHeader>
-          <CardTitle>模板列表</CardTitle>
-          <CardDescription>
-            共 {templates.length} 条，其中 {unusedTemplateCount} 条未被引用。模板类型必须和模型类型匹配。
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="text-xs text-muted-foreground">
-              <tr className="border-b">
-                <th className="py-3 pr-4">名称</th>
-                <th className="py-3 pr-4">Provider</th>
-                <th className="py-3 pr-4">请求头</th>
-                <th className="py-3 pr-4">metadata</th>
-                <th className="py-3 pr-4">引用模型</th>
-                <th className="py-3 pr-4">更新时间</th>
-                <th className="py-3">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {templates.map((item) => (
-                <tr key={item.id} className="border-b align-top last:border-0">
-                  <td className="py-3 pr-4">
-                    <Link href={`/dashboard/templates/${item.id}`} className="font-medium hover:underline">{item.name}</Link>
-                  </td>
-                  <td className="py-3 pr-4"><ProviderBadge type={item.type} /></td>
-                  <td className="py-3 pr-4 max-w-sm truncate font-mono text-xs">{item.request_header ? JSON.stringify(item.request_header) : "-"}</td>
-                  <td className="py-3 pr-4 max-w-sm truncate font-mono text-xs">{item.metadata ? JSON.stringify(item.metadata) : "-"}</td>
-                  <td className="py-3 pr-4">{item.model_count ?? 0}</td>
-                  <td className="py-3 pr-4">{formatDateTime(item.updated_at)}</td>
-                  <td className="py-3">
-                    <TemplateRowActions
-                      id={item.id}
-                      name={item.name}
-                      modelCount={item.model_count ?? 0}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      <TemplatesTable templates={templates} jsonTexts={jsonTexts} />
     </div>
   )
 }

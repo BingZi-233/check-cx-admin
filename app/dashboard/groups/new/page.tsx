@@ -1,7 +1,7 @@
 import Link from "next/link"
+import { ArrowLeftIcon } from "lucide-react"
 
-import { createGroupAction } from "@/app/dashboard/groups/actions"
-import { Notice } from "@/components/admin/notice"
+import { GroupForm } from "@/components/admin/forms/group-form"
 import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,70 +11,40 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { requireAdminUser } from "@/lib/admin/auth"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
 
-function getParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value
-}
-
-export default async function NewGroupPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
-}) {
+export default async function NewGroupPage() {
   await requireAdminUser()
-  const params = await searchParams
-  const error = getParam(params.error)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="新增分组" description="缺少 service role 凭据，当前页面暂不可用。" />
+    return (
+      <PageHeader
+        title="新增分组"
+        description="缺少 service role 凭据，当前页面暂不可用。"
+      />
+    )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="新增分组"
-        description="分组是文本关联，不是外键。改名要谨慎。"
+        description="分组和配置之间是文本关联而不是外键，命名尽量一次定好。"
         actions={
           <Button variant="outline" render={<Link href="/dashboard/groups" />}>
+            <ArrowLeftIcon />
             返回列表
           </Button>
         }
       />
-      {error ? <Notice title="保存失败" description={error} variant="warning" /> : null}
       <Card>
         <CardHeader>
           <CardTitle>分组信息</CardTitle>
-          <CardDescription>标签使用英文逗号分隔，便于保持结构简单。</CardDescription>
+          <CardDescription>标签使用英文逗号分隔。</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={createGroupAction} className="grid gap-5">
-            <div className="space-y-2">
-              <Label htmlFor="group_name">分组名称</Label>
-              <Input id="group_name" name="group_name" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="website_url">网站地址</Label>
-              <Input
-                id="website_url"
-                name="website_url"
-                placeholder="https://example.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tags">标签</Label>
-              <Input id="tags" name="tags" placeholder="official,public,fast" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Button type="submit">创建分组</Button>
-              <Button variant="outline" render={<Link href="/dashboard/groups" />}>
-                取消
-              </Button>
-            </div>
-          </form>
+          <GroupForm />
         </CardContent>
       </Card>
     </div>

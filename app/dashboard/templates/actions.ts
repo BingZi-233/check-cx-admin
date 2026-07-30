@@ -1,32 +1,24 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
+import {
+  actionSuccess,
+  toActionError,
+  type ActionState,
+} from "@/lib/admin/action-result"
 import { requireAdminUser } from "@/lib/admin/auth"
-import { parseProviderType, requiredString, withMessage } from "@/lib/admin/forms"
+import { parseProviderType, requiredString } from "@/lib/admin/forms"
 import { parseOptionalJson } from "@/lib/admin/json"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
-function getActionErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string" &&
-    error.message.trim().length > 0
-  ) {
-    return error.message
-  }
-
-  return fallback
+function revalidateTemplatePaths() {
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/templates")
+  revalidatePath("/dashboard/models")
 }
 
-async function parseTemplatePayload(formData: FormData) {
+function parseTemplatePayload(formData: FormData) {
   return {
     name: requiredString(formData, "name", "模板名称"),
     type: parseProviderType(requiredString(formData, "type", "Provider 类型")),
@@ -35,11 +27,14 @@ async function parseTemplatePayload(formData: FormData) {
   }
 }
 
-export async function createTemplateAction(formData: FormData) {
+export async function createTemplateAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
   try {
-    const payload = await parseTemplatePayload(formData)
+    const payload = parseTemplatePayload(formData)
     const client = createAdminClient()
     const { error } = await client.from("check_request_templates").insert(payload)
 
@@ -47,46 +42,49 @@ export async function createTemplateAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = getActionErrorMessage(error, "创建模板失败")
-    redirect(withMessage("/dashboard/templates/new", "error", message))
+    return toActionError(error, "创建模板失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/templates")
-  revalidatePath("/dashboard/models")
-  redirect(withMessage("/dashboard/templates", "success", "模板已创建"))
+  revalidateTemplatePaths()
+
+  return actionSuccess("模板已创建", "/dashboard/templates")
 }
 
-export async function updateTemplateAction(formData: FormData) {
+export async function updateTemplateAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
-  const id = requiredString(formData, "id", "模板 ID")
-
   try {
-    const payload = await parseTemplatePayload(formData)
+    const id = requiredString(formData, "id", "模板 ID")
+    const payload = parseTemplatePayload(formData)
     const client = createAdminClient()
-    const { error } = await client.from("check_request_templates").update(payload).eq("id", id)
+    const { error } = await client
+      .from("check_request_templates")
+      .update(payload)
+      .eq("id", id)
 
     if (error) {
       throw error
     }
   } catch (error) {
-    const message = getActionErrorMessage(error, "更新模板失败")
-    redirect(withMessage(`/dashboard/templates/${id}`, "error", message))
+    return toActionError(error, "更新模板失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/templates")
-  revalidatePath("/dashboard/models")
-  redirect(withMessage(`/dashboard/templates/${id}`, "success", "模板已更新"))
+  revalidateTemplatePaths()
+
+  return actionSuccess("模板已更新")
 }
 
-export async function deleteTemplateAction(formData: FormData) {
+export async function deleteTemplateAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
-  const id = requiredString(formData, "id", "模板 ID")
-
   try {
+    const id = requiredString(formData, "id", "模板 ID")
     const client = createAdminClient()
     const { count, error: countError } = await client
       .from("check_models")
@@ -101,23 +99,26 @@ export async function deleteTemplateAction(formData: FormData) {
       throw new Error("该模板仍被模型引用，不能删除")
     }
 
-    const { error } = await client.from("check_request_templates").delete().eq("id", id)
+    const { error } = await client
+      .from("check_request_templates")
+      .delete()
+      .eq("id", id)
 
     if (error) {
       throw error
     }
   } catch (error) {
-    const message = getActionErrorMessage(error, "删除模板失败")
-    redirect(withMessage(`/dashboard/templates/${id}`, "error", message))
+    return toActionError(error, "删除模板失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/templates")
-  revalidatePath("/dashboard/models")
-  redirect(withMessage("/dashboard/templates", "success", "模板已删除"))
+  revalidateTemplatePaths()
+
+  return actionSuccess("模板已删除", "/dashboard/templates")
 }
 
-export async function cleanupUnusedTemplatesAction() {
+export async function cleanupUnusedTemplatesAction(
+  _prevState: ActionState
+): Promise<ActionState> {
   await requireAdminUser()
 
   let successMessage = ""
@@ -150,7 +151,10 @@ export async function cleanupUnusedTemplatesAction() {
     if (unusedTemplateIds.length === 0) {
       successMessage = "没有可清理的未引用模板"
     } else {
-      const { error } = await client.from("check_request_templates").delete().in("id", unusedTemplateIds)
+      const { error } = await client
+        .from("check_request_templates")
+        .delete()
+        .in("id", unusedTemplateIds)
 
       if (error) {
         throw error
@@ -159,12 +163,10 @@ export async function cleanupUnusedTemplatesAction() {
       successMessage = `已清理 ${unusedTemplateIds.length} 条未引用模板`
     }
   } catch (error) {
-    const message = getActionErrorMessage(error, "清理未引用模板失败")
-    redirect(withMessage("/dashboard/templates", "error", message))
+    return toActionError(error, "清理未引用模板失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/templates")
-  revalidatePath("/dashboard/models")
-  redirect(withMessage("/dashboard/templates", "success", successMessage))
+  revalidateTemplatePaths()
+
+  return actionSuccess(successMessage)
 }

@@ -1,17 +1,21 @@
 import Link from "next/link"
+import { ArrowLeftIcon } from "lucide-react"
 
+import { ConfigForm } from "@/components/admin/forms/config-form"
 import { Notice } from "@/components/admin/notice"
-import { ConfigModelFields } from "@/components/admin/config-model-fields"
 import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { requireAppUser } from "@/lib/admin/auth"
-import { nativeSelectClassName } from "@/lib/admin/forms"
-import { getConfigById, listGroups, listSelectableModels } from "@/lib/admin/queries"
 import { isAdminUser } from "@/lib/admin/permissions"
+import { getConfigById, listGroups, listSelectableModels } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
-import { createConfigAction } from "@/app/dashboard/configs/actions"
 
 function getParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
@@ -24,13 +28,18 @@ export default async function NewConfigPage({
 }) {
   const user = await requireAppUser()
   const adminUser = isAdminUser(user)
-  const params = await searchParams
-  const error = getParam(params.error)
-  const sourceId = getParam(params.source)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="新建配置" description="缺少 service role 凭据，当前页面暂不可用。" />
+    return (
+      <PageHeader
+        title="新建配置"
+        description="缺少 service role 凭据，当前页面暂不可用。"
+      />
+    )
   }
+
+  // ?source=<id> 是「复制为新配置」入口，用来预填表单
+  const sourceId = getParam((await searchParams).source)
 
   const [groups, models, sourceConfig] = await Promise.all([
     adminUser ? listGroups() : Promise.resolve([]),
@@ -38,80 +47,48 @@ export default async function NewConfigPage({
     sourceId ? getConfigById(sourceId, user) : Promise.resolve(null),
   ])
 
-  const groupNames = Array.from(new Set(groups.map((item) => item.group_name).filter(Boolean))).sort(
-    (left, right) => left.localeCompare(right, "zh-Hans-CN")
-  )
-  const sourceGroupName = sourceConfig?.group_name?.trim() || ""
-  const hasSourceGroup = sourceGroupName.length > 0 && groupNames.includes(sourceGroupName)
+  const groupNames = Array.from(
+    new Set(
+      groups
+        .map((item) => item.group_name?.trim())
+        .filter((item): item is string => Boolean(item))
+    )
+  ).sort((left, right) => left.localeCompare(right, "zh-Hans-CN"))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="新建配置"
-        description="填写检测实例的连接信息，尽量保持配置简单明确。"
-        actions={<Button variant="outline" render={<Link href="/dashboard/configs" />}>返回列表</Button>}
+        description="填写检测实例的连接信息。请求参数默认值跟着模型绑定的模板走。"
+        actions={
+          <Button variant="outline" render={<Link href="/dashboard/configs" />}>
+            <ArrowLeftIcon />
+            返回列表
+          </Button>
+        }
       />
-      {error ? <Notice variant="warning" title="保存失败" description={error} /> : null}
       {sourceConfig ? (
         <Notice
           variant="info"
           title="正在复制已有配置"
-          description={`已从「${sourceConfig.name}」预填表单，请确认差异后再创建新配置。`}
+          description={`已从「${sourceConfig.name}」预填表单，请确认差异后再创建。`}
         />
       ) : null}
       <Card>
         <CardHeader>
           <CardTitle>配置表单</CardTitle>
-          <CardDescription>配置实例只管连接信息。请求参数默认值全部跟着模型绑定的模板走。</CardDescription>
+          <CardDescription>
+            配置只保存连接信息和运行状态，模板改动请去对应模型里处理。
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={createConfigAction} className="grid gap-4 md:grid-cols-2">
-            <input type="hidden" name="source_config_id" value={sourceConfig?.id ?? sourceId ?? ""} />
-            <label className="space-y-2">
-              <span className="text-sm font-medium">显示名称</span>
-              <Input name="name" defaultValue={sourceConfig ? `${sourceConfig.name} - 副本` : ""} required />
-            </label>
-            <ConfigModelFields
-              initialType={sourceConfig?.type ?? "openai"}
-              initialModelId={sourceConfig?.model_id ?? ""}
-              models={models}
-            />
-            <label className="space-y-2">
-              <span className="text-sm font-medium">分组名称</span>
-              {adminUser ? (
-                <select name="group_name" defaultValue={sourceGroupName} className={nativeSelectClassName}>
-                  <option value="">不设置分组</option>
-                  {!hasSourceGroup && sourceGroupName ? (
-                    <option value={sourceGroupName}>{sourceGroupName}（当前未在分组表中）</option>
-                  ) : null}
-                  {groupNames.map((groupName) => (
-                    <option key={groupName} value={groupName}>{groupName}</option>
-                  ))}
-                </select>
-              ) : (
-                <>
-                  <Input value={user.groupName ?? ""} disabled />
-                  <input type="hidden" name="group_name" value={user.groupName ?? ""} />
-                </>
-              )}
-            </label>
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium">API 端点</span>
-              <Input name="endpoint" placeholder="https://api.openai.com/v1/chat/completions" defaultValue={sourceConfig?.endpoint ?? ""} required />
-            </label>
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium">API Key</span>
-              <Input name="api_key" defaultValue={sourceConfig?.api_key ?? ""} required />
-            </label>
-            <div className="flex items-center gap-6 pt-7 text-sm">
-              <label className="flex items-center gap-2"><input type="checkbox" name="enabled" defaultChecked={sourceConfig ? Boolean(sourceConfig.enabled) : true} /> 启用检测</label>
-              <label className="flex items-center gap-2"><input type="checkbox" name="is_maintenance" defaultChecked={Boolean(sourceConfig?.is_maintenance)} /> 维护模式</label>
-            </div>
-            <div className="md:col-span-2 flex justify-end gap-2">
-              <Button type="button" variant="outline" render={<Link href="/dashboard/configs" />}>取消</Button>
-              <Button type="submit">创建配置</Button>
-            </div>
-          </form>
+          <ConfigForm
+            models={models}
+            groupNames={groupNames}
+            isAdmin={adminUser}
+            memberGroupName={user.groupName}
+            sourceConfig={sourceConfig ?? undefined}
+          />
         </CardContent>
       </Card>
     </div>

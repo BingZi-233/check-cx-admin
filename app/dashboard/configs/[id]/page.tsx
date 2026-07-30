@@ -1,9 +1,13 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { ArrowLeftIcon, EraserIcon, Trash2Icon } from "lucide-react"
 
-import { deleteConfigAction, updateConfigAction } from "@/app/dashboard/configs/actions"
-import { ConfigModelFields } from "@/components/admin/config-model-fields"
-import { Notice } from "@/components/admin/notice"
+import {
+  clearConfigHistoryAction,
+  deleteConfigAction,
+} from "@/app/dashboard/configs/actions"
+import { ConfirmActionDialog } from "@/components/admin/confirm-action-dialog"
+import { ConfigForm } from "@/components/admin/forms/config-form"
 import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,124 +17,113 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { requireAppUser } from "@/lib/admin/auth"
 import { formatDateTime } from "@/lib/admin/format"
 import { isAdminUser } from "@/lib/admin/permissions"
-import { getConfigById, listSelectableModels } from "@/lib/admin/queries"
+import { getConfigById, listGroups, listSelectableModels } from "@/lib/admin/queries"
 import { hasAdminDatabaseEnv } from "@/lib/admin/server-env"
-
-function getParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value
-}
 
 export default async function EditConfigPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const user = await requireAppUser()
   const adminUser = isAdminUser(user)
   const { id } = await params
-  const query = await searchParams
-  const error = getParam(query.error)
-  const success = getParam(query.success)
 
   if (!hasAdminDatabaseEnv()) {
-    return <PageHeader title="编辑配置" description="缺少 service role 凭据，当前页面暂不可用。" />
+    return (
+      <PageHeader
+        title="编辑配置"
+        description="缺少 service role 凭据，当前页面暂不可用。"
+      />
+    )
   }
 
-  const [config, models] = await Promise.all([getConfigById(id, user), listSelectableModels()])
+  const [config, models, groups] = await Promise.all([
+    getConfigById(id, user),
+    listSelectableModels(),
+    adminUser ? listGroups() : Promise.resolve([]),
+  ])
 
   if (!config) {
     notFound()
   }
 
+  const groupNames = Array.from(
+    new Set(
+      groups
+        .map((item) => item.group_name?.trim())
+        .filter((item): item is string => Boolean(item))
+    )
+  ).sort((left, right) => left.localeCompare(right, "zh-Hans-CN"))
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title={`编辑：${config.name}`}
         description={`创建于 ${formatDateTime(config.created_at)}，更新于 ${formatDateTime(config.updated_at)}`}
         actions={
           <Button variant="outline" render={<Link href="/dashboard/configs" />}>
+            <ArrowLeftIcon />
             返回列表
           </Button>
         }
       />
-      {success ? <Notice title="保存成功" description={success} variant="success" /> : null}
-      {error ? <Notice title="保存失败" description={error} variant="warning" /> : null}
       <Card>
         <CardHeader>
-          <CardTitle>编辑配置</CardTitle>
+          <CardTitle>配置内容</CardTitle>
           <CardDescription>
-            配置只保存连接信息。模板改动请去对应模型里处理。谨慎删除，`check_history` 会跟着一起被级联删掉。
+            当前模板：{config.template_name ?? "未绑定模板"}。模板改动请去对应模型里处理。
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={updateConfigAction} className="grid gap-5 md:grid-cols-2">
-            <input type="hidden" name="id" value={config.id} />
-            <div className="space-y-2">
-              <Label htmlFor="name">名称</Label>
-              <Input id="name" name="name" defaultValue={config.name} required />
-            </div>
-            <ConfigModelFields
-              initialType={config.type}
-              initialModelId={config.model_id}
-              models={models}
-            />
-            <div className="space-y-2">
-              <Label htmlFor="group_name">分组名</Label>
-              {adminUser ? (
-                <Input id="group_name" name="group_name" defaultValue={config.group_name ?? ""} />
-              ) : (
-                <>
-                  <Input id="group_name" value={config.group_name ?? user.groupName ?? ""} disabled />
-                  <input type="hidden" name="group_name" value={config.group_name ?? user.groupName ?? ""} />
-                </>
-              )}
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="endpoint">接口地址</Label>
-              <Input id="endpoint" name="endpoint" defaultValue={config.endpoint} required />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="api_key">API Key</Label>
-              <Input id="api_key" name="api_key" defaultValue={config.api_key} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="resolved_template">当前模板</Label>
-              <Input id="resolved_template" defaultValue={config.template_name ?? "未绑定模板"} disabled />
-            </div>
-            <div className="flex items-center gap-6 pt-7 text-sm">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" name="enabled" defaultChecked={Boolean(config.enabled)} />
-                启用检测
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="is_maintenance"
-                  defaultChecked={Boolean(config.is_maintenance)}
-                />
-                维护模式
-              </label>
-            </div>
-            <div className="flex items-center gap-3 md:col-span-2">
-              <Button type="submit">保存更改</Button>
-              <Button variant="outline" render={<Link href="/dashboard/configs" />}>
-                取消
+          <ConfigForm
+            config={config}
+            models={models}
+            groupNames={groupNames}
+            isAdmin={adminUser}
+            memberGroupName={user.groupName}
+          />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>危险操作</CardTitle>
+          <CardDescription>
+            删除配置会级联删掉它在 `check_history` 里的检测历史。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <ConfirmActionDialog
+            trigger={
+              <Button type="button" variant="outline">
+                <EraserIcon />
+                清理请求历史
               </Button>
-            </div>
-          </form>
-          <form action={deleteConfigAction} className="mt-6 border-t pt-6">
-            <input type="hidden" name="id" value={config.id} />
-            <Button type="submit" variant="destructive">
-              删除配置
-            </Button>
-          </form>
+            }
+            title="确认清理这条配置的请求历史？"
+            description={`将清理配置「${config.name}」在 check_history 里的全部请求历史。配置本身不受影响。`}
+            action={clearConfigHistoryAction}
+            fields={{ id: config.id }}
+            confirmLabel="确认清理"
+            pendingLabel="清理中"
+          />
+          <ConfirmActionDialog
+            trigger={
+              <Button type="button" variant="destructive">
+                <Trash2Icon />
+                删除配置
+              </Button>
+            }
+            title="确认删除这条配置？"
+            description={`将删除配置「${config.name}」，它的检测历史会一起级联删除。这个操作不可恢复。`}
+            action={deleteConfigAction}
+            fields={{ id: config.id }}
+            confirmLabel="确认删除"
+            pendingLabel="删除中"
+          />
         </CardContent>
       </Card>
     </div>

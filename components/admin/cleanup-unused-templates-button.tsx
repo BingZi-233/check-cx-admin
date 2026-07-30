@@ -1,54 +1,38 @@
 "use client"
 
+import { BrushCleaningIcon } from "lucide-react"
+
 import { cleanupUnusedTemplatesAction } from "@/app/dashboard/templates/actions"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { ConfirmActionDialog } from "@/components/admin/confirm-action-dialog"
 import { Button } from "@/components/ui/button"
 
-type CleanupUnusedTemplatesButtonProps = {
+export function CleanupUnusedTemplatesButton({
+  unusedCount,
+}: {
   unusedCount: number
-}
-
-export function CleanupUnusedTemplatesButton({ unusedCount }: CleanupUnusedTemplatesButtonProps) {
-  const formId = "cleanup-unused-templates"
-
+}) {
   if (unusedCount === 0) {
     return (
       <Button type="button" variant="outline" disabled>
-        清理未引用模板
+        <BrushCleaningIcon />
+        没有可清理的模板
       </Button>
     )
   }
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger render={<Button type="button" variant="destructive" />}>
-        清理未引用模板
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认清理未引用模板？</AlertDialogTitle>
-          <AlertDialogDescription>
-            将删除 {unusedCount} 条当前未被任何模型引用的模板。这个操作不可恢复。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <form id={formId} action={cleanupUnusedTemplatesAction} />
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction type="submit" form={formId} variant="destructive">
-            确认清理
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmActionDialog
+      trigger={
+        <Button type="button" variant="outline">
+          <BrushCleaningIcon />
+          清理 {unusedCount} 条未引用模板
+        </Button>
+      }
+      title="确认清理未引用模板？"
+      description={`将删除 ${unusedCount} 条当前未被任何模型引用的模板。这个操作不可恢复。`}
+      action={cleanupUnusedTemplatesAction}
+      confirmLabel="确认清理"
+      pendingLabel="清理中"
+    />
   )
 }

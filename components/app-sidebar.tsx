@@ -15,6 +15,7 @@ import {
   WaypointsIcon,
 } from "lucide-react"
 
+import { NavLinkIcon } from "@/components/nav-link-icon"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -84,7 +85,6 @@ export function AppSidebar({
                   item.url === "/dashboard"
                     ? pathname === item.url
                     : pathname.startsWith(item.url)
-                const Icon = item.icon
 
                 return (
                   <SidebarMenuItem key={item.url}>
@@ -93,7 +93,7 @@ export function AppSidebar({
                       tooltip={item.title}
                       render={<Link href={item.url} />}
                     >
-                      <Icon />
+                      <NavLinkIcon icon={item.icon} />
                       <span>{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

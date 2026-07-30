@@ -1,28 +1,22 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
+import {
+  actionSuccess,
+  toActionError,
+  ValidationError,
+  type ActionState,
+} from "@/lib/admin/action-result"
 import { requireAdminUser } from "@/lib/admin/auth"
-import { optionalString, parseProviderType, requiredString, withMessage } from "@/lib/admin/forms"
+import { optionalString, parseProviderType, requiredString } from "@/lib/admin/forms"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 
-function getActionErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string" &&
-    error.message.trim().length > 0
-  ) {
-    return error.message
-  }
-
-  return fallback
+function revalidateModelPaths() {
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/models")
+  revalidatePath("/dashboard/configs")
+  revalidatePath("/dashboard/templates")
 }
 
 async function parseModelPayload(formData: FormData) {
@@ -42,11 +36,11 @@ async function parseModelPayload(formData: FormData) {
     }
 
     if (!template) {
-      throw new Error("所选模板不存在")
+      throw new ValidationError("template_id", "所选模板不存在")
     }
 
     if (template.type !== type) {
-      throw new Error("模板类型和模型类型不一致")
+      throw new ValidationError("template_id", "模板类型和模型类型不一致")
     }
   }
 
@@ -57,7 +51,10 @@ async function parseModelPayload(formData: FormData) {
   }
 }
 
-export async function createModelAction(formData: FormData) {
+export async function createModelAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
   try {
@@ -69,23 +66,22 @@ export async function createModelAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = getActionErrorMessage(error, "创建模型失败")
-    redirect(withMessage("/dashboard/models/new", "error", message))
+    return toActionError(error, "创建模型失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/models")
-  revalidatePath("/dashboard/configs")
-  revalidatePath("/dashboard/templates")
-  redirect(withMessage("/dashboard/models", "success", "模型已创建"))
+  revalidateModelPaths()
+
+  return actionSuccess("模型已创建", "/dashboard/models")
 }
 
-export async function updateModelAction(formData: FormData) {
+export async function updateModelAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
-  const id = requiredString(formData, "id", "模型 ID")
-
   try {
+    const id = requiredString(formData, "id", "模型 ID")
     const payload = await parseModelPayload(formData)
     const client = createAdminClient()
     const { error } = await client.from("check_models").update(payload).eq("id", id)
@@ -94,23 +90,22 @@ export async function updateModelAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = getActionErrorMessage(error, "更新模型失败")
-    redirect(withMessage(`/dashboard/models/${id}`, "error", message))
+    return toActionError(error, "更新模型失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/models")
-  revalidatePath("/dashboard/configs")
-  revalidatePath("/dashboard/templates")
-  redirect(withMessage(`/dashboard/models/${id}`, "success", "模型已更新"))
+  revalidateModelPaths()
+
+  return actionSuccess("模型已更新")
 }
 
-export async function deleteModelAction(formData: FormData) {
+export async function deleteModelAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   await requireAdminUser()
 
-  const id = requiredString(formData, "id", "模型 ID")
-
   try {
+    const id = requiredString(formData, "id", "模型 ID")
     const client = createAdminClient()
     const { count, error: countError } = await client
       .from("check_configs")
@@ -131,18 +126,17 @@ export async function deleteModelAction(formData: FormData) {
       throw error
     }
   } catch (error) {
-    const message = getActionErrorMessage(error, "删除模型失败")
-    redirect(withMessage(`/dashboard/models/${id}`, "error", message))
+    return toActionError(error, "删除模型失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/models")
-  revalidatePath("/dashboard/configs")
-  revalidatePath("/dashboard/templates")
-  redirect(withMessage("/dashboard/models", "success", "模型已删除"))
+  revalidateModelPaths()
+
+  return actionSuccess("模型已删除", "/dashboard/models")
 }
 
-export async function cleanupUnusedModelsAction() {
+export async function cleanupUnusedModelsAction(
+  _prevState: ActionState
+): Promise<ActionState> {
   await requireAdminUser()
 
   let successMessage = ""
@@ -175,7 +169,10 @@ export async function cleanupUnusedModelsAction() {
     if (unusedModelIds.length === 0) {
       successMessage = "没有可清理的未引用模型"
     } else {
-      const { error } = await client.from("check_models").delete().in("id", unusedModelIds)
+      const { error } = await client
+        .from("check_models")
+        .delete()
+        .in("id", unusedModelIds)
 
       if (error) {
         throw error
@@ -184,13 +181,10 @@ export async function cleanupUnusedModelsAction() {
       successMessage = `已清理 ${unusedModelIds.length} 条未引用模型`
     }
   } catch (error) {
-    const message = getActionErrorMessage(error, "清理未引用模型失败")
-    redirect(withMessage("/dashboard/models", "error", message))
+    return toActionError(error, "清理未引用模型失败")
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/models")
-  revalidatePath("/dashboard/configs")
-  revalidatePath("/dashboard/templates")
-  redirect(withMessage("/dashboard/models", "success", successMessage))
+  revalidateModelPaths()
+
+  return actionSuccess(successMessage)
 }

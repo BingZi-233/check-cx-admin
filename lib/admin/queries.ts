@@ -10,6 +10,7 @@ import {
   CheckRequestTemplateRecord,
   DashboardSummary,
   GroupInfoRecord,
+  HistoryStatus,
   PollerLeaseRecord,
   SystemNotificationRecord,
 } from "@/lib/admin/types"
@@ -578,33 +579,65 @@ export async function getNotificationById(id: string) {
   return data as SystemNotificationRecord | null
 }
 
+export type HistoryQuery = {
+  page?: number
+  pageSize?: number
+  status?: HistoryStatus | null
+  configId?: string | null
+  groupName?: string | null
+}
+
+const HISTORY_SELECT =
+  "id, config_id, status, latency_ms, ping_latency_ms, checked_at, message, created_at, check_configs(id, name, type, model_id, group_name, check_models(model))"
+
 export async function listRecentHistory(user: AppUser, limit = 120) {
+  const { rows } = await queryHistory(user, { page: 1, pageSize: limit })
+  return rows
+}
+
+/**
+ * 服务端分页的检测历史。这张表可能有上万行，不能像以前那样一次性拉 200 条全渲染。
+ */
+export async function queryHistory(user: AppUser, query: HistoryQuery = {}) {
+  const page = Math.max(1, query.page ?? 1)
+  const pageSize = Math.min(200, Math.max(1, query.pageSize ?? 50))
   const client = createAdminClient()
   const scopedConfigIds = await listScopedConfigIds(user)
 
   if (scopedConfigIds && scopedConfigIds.length === 0) {
-    return []
+    return { rows: [] as CheckHistoryRecord[], total: 0, page, pageSize }
   }
 
-  let query = client
+  let builder = client
     .from("check_history")
-    .select(
-      "id, config_id, status, latency_ms, ping_latency_ms, checked_at, message, created_at, check_configs(id, name, type, model_id, group_name, check_models(model))"
-    )
+    .select(HISTORY_SELECT, { count: "exact" })
     .order("checked_at", { ascending: false })
-    .limit(limit)
+    .range((page - 1) * pageSize, page * pageSize - 1)
 
   if (scopedConfigIds) {
-    query = query.in("config_id", scopedConfigIds)
+    builder = builder.in("config_id", scopedConfigIds)
   }
 
-  const { data, error } = await query
+  if (query.status) {
+    builder = builder.eq("status", query.status)
+  }
+
+  if (query.configId) {
+    builder = builder.eq("config_id", query.configId)
+  }
+
+  if (query.groupName) {
+    // group_name 在关联表上，用嵌套过滤而不是把整表拉回来再筛
+    builder = builder.eq("check_configs.group_name", query.groupName)
+  }
+
+  const { data, error, count } = await builder
 
   if (error) {
     throw error
   }
 
-  return ((data ?? []) as Array<
+  const rows = ((data ?? []) as Array<
     Omit<CheckHistoryRecord, "check_configs"> & {
       check_configs?:
         | Array<
@@ -639,7 +672,9 @@ export async function listRecentHistory(user: AppUser, limit = 120) {
         group_name: config.group_name,
       }
     })(),
-  }))
+  })) as CheckHistoryRecord[]
+
+  return { rows, total: count ?? rows.length, page, pageSize }
 }
 
 export async function listAvailabilityStats(user: AppUser) {

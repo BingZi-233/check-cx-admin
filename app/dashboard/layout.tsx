@@ -1,12 +1,11 @@
 export const dynamic = "force-dynamic"
 
 import { ReactNode } from "react"
-import Link from "next/link"
-import { ExternalLinkIcon } from "lucide-react"
 
-import { AppSidebar } from "@/components/app-sidebar"
+import { EnvInfoPopover } from "@/components/admin/env-info-popover"
 import { Notice } from "@/components/admin/notice"
-import { PageTransition } from "@/components/page-transition"
+import { AppSidebar } from "@/components/app-sidebar"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -16,7 +15,11 @@ import {
 } from "@/components/ui/sidebar"
 import { requireAppUser } from "@/lib/admin/auth"
 import { describeUserScope, isAdminUser } from "@/lib/admin/permissions"
-import { getAdminDatabaseSchema, getAdminDatabaseWarnings, hasAdminDatabaseEnv } from "@/lib/admin/server-env"
+import {
+  getAdminDatabaseSchema,
+  getAdminDatabaseWarnings,
+  hasAdminDatabaseEnv,
+} from "@/lib/admin/server-env"
 
 export default async function DashboardLayout({
   children,
@@ -40,40 +43,31 @@ export default async function DashboardLayout({
         }}
       />
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/80">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="h-16" />
+          <Separator orientation="vertical" className="h-5 self-center" />
           <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">check-cx 后台管理</p>
-              <p className="truncate text-xs text-muted-foreground">
-                当前登录：{user.email} · {describeUserScope(user)}
+              <p className="truncate text-xs font-medium">check-cx 后台管理</p>
+              <p className="truncate text-[0.6875rem] text-muted-foreground">
+                {user.email} · {describeUserScope(user)}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            {/* 以前这里平铺三个 Badge 加一个外链，挤成一团；
+                现在只留角色标识，其余信息收进「环境」气泡 */}
+            <div className="flex shrink-0 items-center gap-1.5">
               <Badge variant={isAdminUser(user) ? "default" : "outline"}>
                 {isAdminUser(user) ? "管理员" : "成员"}
               </Badge>
-              <Badge variant={adminDbReady ? "secondary" : "destructive"}>
-                {adminDbReady ? "数据库已连通" : "缺少后台数据库权限"}
-              </Badge>
-              {dbSchema ? (
-                <Badge variant={dbSchema === "public" ? "outline" : "secondary"}>
-                  schema: {dbSchema}
-                </Badge>
-              ) : null}
-              <Link
-                href="https://github.com/BingZi-233/check-cx"
-                target="_blank"
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                上游仓库
-                <ExternalLinkIcon className="size-3" />
-              </Link>
+              <EnvInfoPopover adminDbReady={adminDbReady} dbSchema={dbSchema} />
+              <ThemeToggle />
             </div>
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        {/* 原来这里包了一层 PageTransition，每次导航强制 300ms 淡入 + 位移，
+            叠在本来就慢的 server render 之后，只会让人觉得更卡。
+            现在改用 loading.tsx 骨架屏 + 侧边栏 pending 图标做反馈。 */}
+        <main className="flex flex-1 flex-col gap-4 p-4 md:p-6">
           {!adminDbReady ? (
             <Notice
               variant="warning"
@@ -81,9 +75,7 @@ export default async function DashboardLayout({
               description={adminDbWarnings.join("；")}
             />
           ) : null}
-          <PageTransition>
-            {children}
-          </PageTransition>
+          {children}
         </main>
       </SidebarInset>
     </SidebarProvider>
