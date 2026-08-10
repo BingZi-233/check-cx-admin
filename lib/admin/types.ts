@@ -121,6 +121,21 @@ export interface AvailabilityStatRecord {
   availability_pct: number | null
 }
 
+export interface IntelligenceStatRecord {
+  config_id: string
+  total_samples: number
+  d1_pass_rate: number | null
+  d2_pass_rate: number | null
+  d3_pass_rate: number | null
+  d4_pass_rate: number | null
+  d5_pass_rate: number | null
+  total_score: number | null
+  // listIntelligenceStats 从 check_configs 合并的展示字段
+  name?: string
+  model?: string
+  group_name?: string | null
+}
+
 export interface PollerLeaseRecord {
   lease_key: string
   leader_id: string | null

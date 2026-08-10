@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BellIcon,
+  BrainIcon,
   FolderTreeIcon,
   GaugeIcon,
   HistoryIcon,
@@ -39,6 +40,7 @@ const mainItems = [
   { title: "系统通知", url: "/dashboard/notifications", icon: BellIcon, adminOnly: true },
   { title: "允许用户", url: "/dashboard/users", icon: UserPlusIcon, adminOnly: true },
   { title: "历史记录", url: "/dashboard/history", icon: HistoryIcon },
+  { title: "智能评估", url: "/dashboard/intelligence", icon: BrainIcon, adminOnly: true },
   { title: "运行状态", url: "/dashboard/system", icon: WaypointsIcon },
 ]
 

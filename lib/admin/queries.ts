@@ -11,6 +11,7 @@ import {
   DashboardSummary,
   GroupInfoRecord,
   HistoryStatus,
+  IntelligenceStatRecord,
   PollerLeaseRecord,
   SystemNotificationRecord,
 } from "@/lib/admin/types"
@@ -701,6 +702,44 @@ export async function listAvailabilityStats(user: AppUser) {
   }
 
   return (data ?? []) as AvailabilityStatRecord[]
+}
+
+export async function listIntelligenceStats(user: AppUser) {
+  const client = createAdminClient()
+  const scopedConfigIds = await listScopedConfigIds(user)
+
+  if (scopedConfigIds && scopedConfigIds.length === 0) {
+    return []
+  }
+
+  let query = client
+    .from("intelligence_stats")
+    .select("*")
+    .order("total_score", { ascending: false, nullsFirst: false })
+
+  if (scopedConfigIds) {
+    query = query.in("config_id", scopedConfigIds)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw error
+  }
+
+  // 视图只有 config_id，名称/模型/分组从配置表合并（行数小，TS 侧合并即可）
+  const configs = await listConfigs(user)
+  const configById = new Map(configs.map((item) => [item.id, item]))
+
+  return ((data ?? []) as IntelligenceStatRecord[]).map((row) => {
+    const config = configById.get(row.config_id)
+    return {
+      ...row,
+      name: config?.name,
+      model: config?.model,
+      group_name: config?.group_name ?? null,
+    }
+  })
 }
 
 export async function getPollerLease() {
